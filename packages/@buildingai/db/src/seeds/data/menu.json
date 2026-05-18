@@ -1,0 +1,568 @@
+[
+    {
+        "name": "数据看板",
+        "code": "dashboard",
+        "path": "dashboard",
+        "icon": "chart-line",
+        "component": "/console/dashboard",
+        "permissionCode": "analyse:dashboard",
+        "sort": 0,
+        "isHidden": 0,
+        "type": 2,
+        "sourceType": 1
+    },
+    {
+        "name": "工作空间",
+        "code": "workspace",
+        "path": "",
+        "icon": "",
+        "component": "",
+        "permissionCode": null,
+        "sort": 1,
+        "isHidden": 0,
+        "type": 0,
+        "sourceType": 1,
+        "children": [
+            {
+                "name": "智能体",
+                "code": "ai-agent",
+                "path": "agent",
+                "icon": "bot",
+                "component": "/console/ai/agent/list",
+                "permissionCode": null,
+                "sort": 100,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "智能体列表",
+                        "code": "ai-agent-list",
+                        "path": "/",
+                        "icon": "",
+                        "component": "/console/ai/agent/list",
+                        "permissionCode": "agents:list",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "智能体配置",
+                        "code": "ai-agent-config",
+                        "path": "config",
+                        "icon": "",
+                        "component": "/console/ai/agent/config",
+                        "permissionCode": "agent-config:get",
+                        "sort": 10,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "知识库",
+                "code": "ai-datasets",
+                "path": "datasets",
+                "icon": "file-search",
+                "component": "",
+                "permissionCode": null,
+                "sort": 200,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "知识库列表",
+                        "code": "ai-datasets-list",
+                        "path": "/",
+                        "icon": "",
+                        "component": "/console/ai/datasets/list",
+                        "permissionCode": "datasets:list",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "知识库配置",
+                        "code": "ai-datasets-config",
+                        "path": "config",
+                        "icon": "",
+                        "component": "/console/ai/datasets/config",
+                        "permissionCode": "datasets-config:get",
+                        "sort": 10,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "MCP",
+                "code": "ai-config-mcp-server",
+                "path": "mcp",
+                "icon": "wrench",
+                "component": "/console/ai/mcp/list",
+                "permissionCode": "ai-mcp-servers:list",
+                "sort": 300,
+                "isHidden": 0,
+                "type": 2,
+                "sourceType": 1
+            },
+            {
+                "name": "模型厂商",
+                "code": "ai-config-provide",
+                "path": "provider",
+                "icon": "brain-circuit",
+                "component": "/console/ai/provider/list",
+                "permissionCode": "ai-providers:list",
+                "sort": 400,
+                "isHidden": 0,
+                "type": 2,
+                "sourceType": 1
+            },
+            {
+                "name": "密钥管理",
+                "code": "api-key-manage",
+                "path": "secret",
+                "icon": "key-round",
+                "component": "/console/ai/secret/list",
+                "permissionCode": "secret-templates:list",
+                "sort": 450,
+                "isHidden": 0,
+                "type": 2,
+                "sourceType": 1
+            },
+            {
+                "name": "应用管理",
+                "code": "plugin-manage",
+                "path": "extension",
+                "icon": "layout-grid",
+                "component": "/console/extension",
+                "permissionCode": "extensions:list",
+                "sort": 500,
+                "isHidden": 0,
+                "type": 2,
+                "sourceType": 1
+            }
+        ]
+    },
+    {
+        "name": "系统管理",
+        "code": "system-manage",
+        "path": "",
+        "icon": "",
+        "component": "",
+        "permissionCode": null,
+        "sort": 2,
+        "isHidden": 0,
+        "type": 0,
+        "sourceType": 1,
+        "children": [
+            {
+                "name": "营销中心",
+                "code": "operation",
+                "path": "operation",
+                "icon": "store",
+                "component": "/console/operation/index",
+                "permissionCode": null,
+                "sort": 350,
+                "isHidden": 0,
+                "type": 2,
+                "sourceType": 1
+            },
+            {
+                "name": "装修中心",
+                "code": "diy-center",
+                "path": "decorate",
+                "icon": "paint-roller",
+                "component": "",
+                "permissionCode": null,
+                "sort": 400,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "布局配置",
+                        "code": "diy-layout",
+                        "path": "layout",
+                        "icon": "",
+                        "component": "/console/decorate/layout/index",
+                        "permissionCode": "decorate-page:get-menu-config",
+                        "sort": 1,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "应用中心",
+                        "code": "apps-center",
+                        "path": "apps",
+                        "icon": "",
+                        "component": "/console/decorate/apps/list",
+                        "permissionCode": "extensions:list",
+                        "sort": 2,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "智能体广场",
+                        "code": "agents",
+                        "path": "agents",
+                        "icon": "",
+                        "component": "/console/decorate/agent/index",
+                        "permissionCode": "agent-decorate:get",
+                        "sort": 3,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "对话管理",
+                "code": "chat",
+                "path": "chat",
+                "icon": "message-square-diff",
+                "component": "",
+                "permissionCode": null,
+                "sort": 500,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "对话记录",
+                        "code": "conversation-ai-conversation",
+                        "path": "record",
+                        "icon": "",
+                        "component": "/console/ai/chat/list",
+                        "permissionCode": "ai-conversations:list",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "对话配置",
+                        "code": "122chat",
+                        "path": "config",
+                        "icon": "",
+                        "component": "/console/ai/chat/setting",
+                        "permissionCode": "ai-conversations:get-config",
+                        "sort": 10,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "用户管理",
+                "code": "user",
+                "path": "user",
+                "icon": "users",
+                "component": "",
+                "permissionCode": null,
+                "sort": 600,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "用户列表",
+                        "code": "user-list",
+                        "path": "list",
+                        "icon": "",
+                        "component": "/console/user/list",
+                        "permissionCode": "users:list",
+                        "sort": 10,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "订单管理",
+                "code": null,
+                "path": "order",
+                "icon": "clipboard-list",
+                "component": "",
+                "permissionCode": null,
+                "sort": 700,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "会员订单",
+                        "code": "membership-order",
+                        "path": "membership",
+                        "icon": "",
+                        "component": "/console/order/order-membership",
+                        "permissionCode": "membership-order:list",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "充值订单",
+                        "code": "order",
+                        "path": "recharge",
+                        "icon": "",
+                        "component": "/console/order/order-recharge",
+                        "permissionCode": "recharge-order:list",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "消息通知",
+                "code": "notice",
+                "path": "notice",
+                "icon": "bell",
+                "component": "",
+                "permissionCode": null,
+                "sort": 800,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "短信配置",
+                        "code": "sms-config",
+                        "path": "sms",
+                        "icon": "",
+                        "component": "/console/notice/sms/index",
+                        "permissionCode": "notice:sms-config-detail",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "通知设置",
+                        "code": "notification-settings",
+                        "path": "notification-settings",
+                        "icon": "",
+                        "component": "/console/notice/notification-settings/index",
+                        "permissionCode": "notice:sms-scene-settings-detail",
+                        "sort": 10,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "渠道管理",
+                "code": "channel-management",
+                "path": "channel",
+                "icon": "share-2",
+                "component": "",
+                "permissionCode": null,
+                "sort": 900,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "微信公众号",
+                        "code": "channel-wechat-oa",
+                        "path": "wechat-oa",
+                        "icon": "",
+                        "component": "/console/channel/wechatoa/index",
+                        "permissionCode": "wxoaconfig:get-config",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "财务管理",
+                "code": null,
+                "path": "financial",
+                "icon": "circle-dollar-sign",
+                "component": "",
+                "permissionCode": null,
+                "sort": 1000,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "财务中心",
+                        "code": "financial-center",
+                        "path": "analysis",
+                        "icon": "",
+                        "component": "/console/financial/financial-center",
+                        "permissionCode": "finance:center",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "余额明细",
+                        "code": "account-balance",
+                        "path": "balance-details",
+                        "icon": "",
+                        "component": "/console/financial/account-balance",
+                        "permissionCode": "finance:account-log",
+                        "sort": 10,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "权限管理",
+                "code": "system-permission",
+                "path": "access",
+                "icon": "user-lock",
+                "component": "",
+                "permissionCode": null,
+                "sort": 1100,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "权限列表",
+                        "code": "system-permission-list",
+                        "path": "permission",
+                        "icon": "",
+                        "component": "/console/permission/list",
+                        "permissionCode": "permission:list",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "角色列表",
+                        "code": "system-role-list",
+                        "path": "role",
+                        "icon": "",
+                        "component": "/console/role/list",
+                        "permissionCode": "role:list",
+                        "sort": 30,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "菜单列表",
+                        "code": "system-menu",
+                        "path": "menu",
+                        "icon": "",
+                        "component": "/console/menu/list",
+                        "permissionCode": "menu:tree",
+                        "sort": 60,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            },
+            {
+                "name": "系统设置",
+                "code": "system-settings",
+                "path": "system",
+                "icon": "settings-2",
+                "component": "",
+                "permissionCode": null,
+                "sort": 1300,
+                "isHidden": 0,
+                "type": 1,
+                "sourceType": 1,
+                "children": [
+                    {
+                        "name": "登录配置",
+                        "code": "system-loginConfig-get",
+                        "path": "login-config",
+                        "icon": "",
+                        "component": "/console/system-setting/login-config/index",
+                        "permissionCode": "users:get-login-settings",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "政策协议",
+                        "code": "system-agreement",
+                        "path": "agreement",
+                        "icon": "",
+                        "component": "/console/system-setting/agreement/index",
+                        "permissionCode": "system-website:getConfig",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "站点信息",
+                        "code": "system-website",
+                        "path": "website-config",
+                        "icon": "",
+                        "component": "/console/system-setting/website/index",
+                        "permissionCode": "system-website:getConfig",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "支付配置",
+                        "code": "system-payConfig-list",
+                        "path": "pay-config",
+                        "icon": "",
+                        "component": "/console/system-setting/pay-config/index",
+                        "permissionCode": "system-payconfig:list",
+                        "sort": 0,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "存储配置",
+                        "code": "system-storage-config",
+                        "path": "storage-config",
+                        "icon": "",
+                        "component": "/console/system-setting/storage-config/index",
+                        "permissionCode": "system-storage-config:list",
+                        "sort": 100,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    },
+                    {
+                        "name": "日志切割",
+                        "code": "system-pm2-log-rotate",
+                        "path": "pm2-log-rotate",
+                        "icon": "",
+                        "component": "/console/system/pm2-log-rotate/index",
+                        "permissionCode": "pm2:get-log-rotate-config",
+                        "sort": 110,
+                        "isHidden": 0,
+                        "type": 2,
+                        "sourceType": 1
+                    }
+                ]
+            }
+        ]
+    }
+]

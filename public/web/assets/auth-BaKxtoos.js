@@ -1,0 +1,1 @@
+var e={ACCOUNT:1,PHONE:2,WECHAT:3};export{e as t};

@@ -1,0 +1,159 @@
+import type {
+    MutationOptionsUtil,
+    PaginatedQueryOptionsUtil,
+    PaginatedResponse,
+    QueryOptionsUtil,
+} from "@buildingai/web-types";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
+import { consoleHttpClient } from "../base";
+
+export type ConsoleDatasetVectorConfig = {
+    id: string;
+    name: string;
+    embeddingModelId: string | null;
+    retrievalMode: string;
+    retrievalConfig: Record<string, unknown>;
+};
+
+export type SetDatasetVectorConfigDto = {
+    embeddingModelId?: string;
+    retrievalMode?: string;
+    retrievalConfig?: Record<string, unknown>;
+};
+
+export type ConsoleDatasetStatus =
+    | "all"
+    | "none"
+    | "pending"
+    | "approved"
+    | "rejected"
+    | "published"
+    | "unpublished";
+
+export type ConsoleDatasetItemTag = { id: string; name: string };
+
+export type ConsoleDatasetItem = {
+    id: string;
+    name: string;
+    modelName?: string | null;
+    modelProvider?: string | null;
+    creatorName: string;
+    documentCount: number;
+    storageSize: number;
+    storageSizeFormatted: string;
+    publishedToSquare: boolean;
+    squarePublishStatus: string;
+    squareRejectReason?: string | null;
+    coverUrl: string;
+    sort: number;
+    updatedAt: string;
+    tags?: ConsoleDatasetItemTag[];
+};
+
+export type QueryConsoleDatasetsDto = {
+    page?: number;
+    pageSize?: number;
+    name?: string;
+    status?: ConsoleDatasetStatus;
+    tagId?: string;
+};
+
+export function useConsoleDatasetsListQuery(
+    params?: QueryConsoleDatasetsDto,
+    options?: PaginatedQueryOptionsUtil<ConsoleDatasetItem>,
+) {
+    return useQuery({
+        queryKey: ["console", "datasets", "list", params],
+        queryFn: () =>
+            consoleHttpClient.get<PaginatedResponse<ConsoleDatasetItem>>("/datasets", {
+                params,
+            }),
+        ...options,
+    });
+}
+
+export type RejectDatasetSquareDto = { reason?: string };
+
+export function useApproveDatasetSquareMutation(
+    options?: MutationOptionsUtil<ConsoleDatasetItem, string>,
+) {
+    return useMutation<ConsoleDatasetItem, Error, string>({
+        mutationFn: (id) =>
+            consoleHttpClient.post<ConsoleDatasetItem>(`/datasets/${id}/approve-square`),
+        ...options,
+    });
+}
+
+export function useRejectDatasetSquareMutation(
+    options?: MutationOptionsUtil<ConsoleDatasetItem, { id: string; reason?: string }>,
+) {
+    return useMutation<ConsoleDatasetItem, Error, { id: string; reason?: string }>({
+        mutationFn: ({ id, reason }) =>
+            consoleHttpClient.post<ConsoleDatasetItem>(`/datasets/${id}/reject-square`, {
+                reason,
+            }),
+        ...options,
+    });
+}
+
+export function usePublishDatasetSquareMutation(
+    options?: MutationOptionsUtil<ConsoleDatasetItem, string>,
+) {
+    return useMutation<ConsoleDatasetItem, Error, string>({
+        mutationFn: (id) =>
+            consoleHttpClient.post<ConsoleDatasetItem>(`/datasets/${id}/publish-square`),
+        ...options,
+    });
+}
+
+export function useUnpublishDatasetSquareMutation(
+    options?: MutationOptionsUtil<ConsoleDatasetItem, string>,
+) {
+    return useMutation<ConsoleDatasetItem, Error, string>({
+        mutationFn: (id) =>
+            consoleHttpClient.post<ConsoleDatasetItem>(`/datasets/${id}/unpublish-square`),
+        ...options,
+    });
+}
+
+export function useConsoleDatasetDetailQuery(
+    id: string | null,
+    options?: QueryOptionsUtil<ConsoleDatasetVectorConfig>,
+) {
+    return useQuery({
+        queryKey: ["console", "datasets", "detail", id],
+        queryFn: () => consoleHttpClient.get<ConsoleDatasetVectorConfig>(`/datasets/${id}`),
+        enabled: !!id,
+        ...options,
+    });
+}
+
+export function useDeleteDatasetMutation(
+    options?: MutationOptionsUtil<{ success: boolean }, string>,
+) {
+    return useMutation<{ success: boolean }, Error, string>({
+        mutationFn: (id) => consoleHttpClient.delete<{ success: boolean }>(`/datasets/${id}`),
+        ...options,
+    });
+}
+
+export function useSetDatasetVectorConfigMutation(
+    options?: MutationOptionsUtil<
+        ConsoleDatasetVectorConfig,
+        { id: string; dto: SetDatasetVectorConfigDto }
+    >,
+) {
+    return useMutation<
+        ConsoleDatasetVectorConfig,
+        Error,
+        { id: string; dto: SetDatasetVectorConfigDto }
+    >({
+        mutationFn: ({ id, dto }) =>
+            consoleHttpClient.patch<ConsoleDatasetVectorConfig>(
+                `/datasets/${id}/vector-config`,
+                dto,
+            ),
+        ...options,
+    });
+}

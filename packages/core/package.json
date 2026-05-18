@@ -1,0 +1,70 @@
+{
+    "name": "@buildingai/core",
+    "version": "0.0.0",
+    "private": true,
+    "license": "MIT",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./@nestjs/schedule": {
+            "import": "./dist/@nestjs/schedule.js",
+            "require": "./dist/@nestjs/schedule.js",
+            "types": "./dist/@nestjs/schedule.d.ts"
+        },
+        "./decorators": {
+            "import": "./dist/decorators/index.js",
+            "require": "./dist/decorators/index.js",
+            "types": "./dist/decorators/index.d.ts"
+        },
+        "./interfaces": {
+            "import": "./dist/interfaces/index.js",
+            "require": "./dist/interfaces/index.js",
+            "types": "./dist/interfaces/index.d.ts"
+        },
+        "./modules": {
+            "import": "./dist/modules/index.js",
+            "require": "./dist/modules/index.js",
+            "types": "./dist/modules/index.d.ts"
+        }
+    },
+    "scripts": {
+        "clean": "rimraf dist .turbo dist/build.tsbuildinfo",
+        "check-types": "tsc --noEmit",
+        "build": "tsc -p tsconfig.build.json",
+        "dev": "tsc -p tsconfig.build.json --watch",
+        "format": "biome format --write .",
+        "format:check": "biome ci .",
+        "lint": "eslint . --quiet",
+        "lint:fix": "eslint . --fix",
+        "watch": "tsc -p tsconfig.build.json --watch",
+        "test": "jest",
+        "test:dev": "jest --watch"
+    },
+    "dependencies": {
+        "@buildingai/base": "workspace:*",
+        "@buildingai/cache": "workspace:*",
+        "@buildingai/config": "workspace:*",
+        "@buildingai/constants": "workspace:*",
+        "@buildingai/db": "workspace:*",
+        "@buildingai/dto": "workspace:*",
+        "@buildingai/errors": "workspace:*",
+        "@buildingai/logger": "workspace:*",
+        "@buildingai/utils": "workspace:*",
+        "@nestjs/common": "catalog:api",
+        "@types/ali-oss": "catalog:",
+        "ali-oss": "catalog:",
+        "cli-table3": "catalog:",
+        "cos-nodejs-sdk-v5": "catalog:",
+        "tencentcloud-sdk-nodejs-sts": "catalog:"
+    },
+    "devDependencies": {
+        "@buildingai/eslint-config": "workspace:*",
+        "@buildingai/typescript-config": "workspace:*"
+    }
+}

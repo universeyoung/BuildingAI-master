@@ -1,0 +1,787 @@
+import { BaseService } from "@buildingai/base";
+import { PROCESSING_STATUS } from "@buildingai/constants/shared/datasets.constants";
+import { type UserPlayground } from "@buildingai/db";
+import { InjectRepository } from "@buildingai/db/@nestjs/typeorm";
+import { Datasets, DatasetsDocument, DatasetsSegments } from "@buildingai/db/entities";
+import { Brackets, In, Repository } from "@buildingai/db/typeorm";
+import { PaginationDto } from "@buildingai/dto/pagination.dto";
+import { HttpErrorFactory } from "@buildingai/errors";
+import { llmFileParser } from "@buildingai/llm-file-parser";
+import { UploadService } from "@modules/upload/services/upload.service";
+import { UserCapacityService } from "@modules/user/services/user-capacity.service";
+import { Injectable, Logger } from "@nestjs/common";
+import { pathExists, readFile } from "fs-extra";
+
+import type {
+    BatchAddTagsDto,
+    BatchCopyDocumentsDto,
+    BatchDeleteDocumentsDto,
+    BatchMoveDocumentsDto,
+    CreateDocumentDto,
+    ListDocumentsDto,
+} from "../dto/document.dto";
+import { DatasetMemberService } from "./datasets-member.service";
+import { DatasetsSegmentService } from "./datasets-segment.service";
+import { DocumentSummaryService } from "./document-summary.service";
+import { SegmentationService } from "./segmentation.service";
+import { VectorizationTriggerService } from "./vectorization-trigger.service";
+
+@Injectable()
+export class DatasetsDocumentService extends BaseService<DatasetsDocument> {
+    protected readonly logger = new Logger(DatasetsDocumentService.name);
+
+    constructor(
+        @InjectRepository(DatasetsDocument)
+        private readonly documentRepository: Repository<DatasetsDocument>,
+        @InjectRepository(Datasets)
+        private readonly datasetsRepository: Repository<Datasets>,
+        @InjectRepository(DatasetsSegments)
+        private readonly segmentRepository: Repository<DatasetsSegments>,
+        private readonly uploadService: UploadService,
+        private readonly segmentationService: SegmentationService,
+        private readonly segmentService: DatasetsSegmentService,
+        private readonly vectorizationTrigger: VectorizationTriggerService,
+        private readonly documentSummaryService: DocumentSummaryService,
+        private readonly datasetMemberService: DatasetMemberService,
+        private readonly userCapacityService: UserCapacityService,
+    ) {
+        super(documentRepository);
+    }
+
+    async createDocument(
+        datasetId: string,
+        dto: CreateDocumentDto,
+        user: UserPlayground,
+    ): Promise<DatasetsDocument> {
+        const hasFileId = dto.fileId != null && String(dto.fileId).trim() !== "";
+        const hasUrl = dto.url != null && String(dto.url).trim() !== "";
+        if (hasFileId && hasUrl) {
+            throw HttpErrorFactory.badRequest("只能传 fileId 或 url 其中之一");
+        }
+        if (!hasFileId && !hasUrl) {
+            throw HttpErrorFactory.badRequest("必须传 fileId 或 url 其中之一");
+        }
+        if (hasFileId) {
+            return this.createByFileId(datasetId, dto.fileId!.trim(), user);
+        }
+        return this.createByUrl(datasetId, dto.url!.trim(), user);
+    }
+
+    async createByFileId(
+        datasetId: string,
+        fileId: string,
+        user: UserPlayground,
+    ): Promise<DatasetsDocument> {
+        const dataset = await this.datasetsRepository.findOne({
+            where: { id: datasetId },
+        });
+        if (!dataset) throw HttpErrorFactory.notFound("知识库不存在");
+
+        const file = await this.uploadService.getFileById(fileId);
+        if (!file) throw HttpErrorFactory.notFound("文件不存在");
+
+        const fileRecordPath = typeof file.path === "string" ? file.path : "";
+        const isCloudStoredFile =
+            fileRecordPath.startsWith("uploads/") || fileRecordPath.includes("/uploads/");
+
+        let fileSize = file.size ?? 0;
+        let fileUrl: string | null = null;
+        let rawText = "";
+
+        if (isCloudStoredFile) {
+            if (!file.url) {
+                throw HttpErrorFactory.badRequest("文件已失效或已被删除");
+            }
+            const result = await llmFileParser.parseFromUrl(file.url);
+            rawText = result.text?.trim() ?? "";
+            fileSize = (result.metadata?.size as number) ?? fileSize;
+            fileUrl = file.url;
+        } else {
+            const filePath = await this.uploadService.getFilePath(fileId);
+            if (!(await pathExists(filePath))) {
+                throw HttpErrorFactory.badRequest("文件已失效或已被删除");
+            }
+
+            const buffer = await readFile(filePath);
+            const result = await llmFileParser.parseFromBuffer(
+                buffer,
+                file.originalName ?? "unknown",
+                file.mimeType ?? undefined,
+            );
+            rawText = result.text?.trim() ?? "";
+            fileSize = file.size ?? buffer.length;
+        }
+
+        if (!rawText) {
+            if (this.isPdfFile(file.originalName ?? "", file.mimeType ?? undefined)) {
+                throw HttpErrorFactory.badRequest("暂不支持扫描件 PDF，请上传可复制文本的 PDF");
+            }
+            throw HttpErrorFactory.badRequest("文档解析后内容为空");
+        }
+
+        return this.createDocumentFromRawText(
+            datasetId,
+            {
+                fileName: file.originalName ?? "unknown",
+                fileType: file.mimeType ?? "application/octet-stream",
+                fileSize,
+                fileId,
+                fileUrl,
+            },
+            rawText,
+            dataset.embeddingModelId ?? undefined,
+            user.id,
+        );
+    }
+
+    async createByUrl(
+        datasetId: string,
+        url: string,
+        user: UserPlayground,
+    ): Promise<DatasetsDocument> {
+        const dataset = await this.datasetsRepository.findOne({
+            where: { id: datasetId },
+        });
+        if (!dataset) throw HttpErrorFactory.notFound("知识库不存在");
+
+        const result = await llmFileParser.parseFromUrl(url.trim());
+        const rawText = result.text?.trim() ?? "";
+        if (!rawText) {
+            const metadataFileType = result.metadata?.filetype as string | undefined;
+            const metadataFileName = result.metadata?.filename as string | undefined;
+            if (this.isPdfFile(metadataFileName ?? "", metadataFileType, url.trim())) {
+                throw HttpErrorFactory.badRequest("暂不支持扫描件 PDF，请上传可复制文本的 PDF");
+            }
+            throw HttpErrorFactory.badRequest("URL 文档解析后内容为空");
+        }
+
+        let fileName = result.metadata?.filename as string | undefined;
+        if (!fileName) {
+            try {
+                fileName = new URL(url).pathname.split("/").pop() || "url-document";
+            } catch {
+                fileName = "url-document";
+            }
+        }
+        const fileType = (result.metadata?.filetype as string) ?? "application/octet-stream";
+        const fileSize = (result.metadata?.size as number) ?? rawText.length;
+
+        return this.createDocumentFromRawText(
+            datasetId,
+            {
+                fileName,
+                fileType,
+                fileSize,
+                fileId: null,
+                fileUrl: url.trim(),
+            },
+            rawText,
+            dataset.embeddingModelId ?? undefined,
+            user.id,
+        );
+    }
+
+    private async createDocumentFromRawText(
+        datasetId: string,
+        meta: {
+            fileName: string;
+            fileType: string;
+            fileSize: number;
+            fileId: string | null;
+            fileUrl: string | null;
+        },
+        rawText: string,
+        embeddingModelId: string | undefined,
+        createdBy: string,
+    ): Promise<DatasetsDocument> {
+        // 获取知识库所属用户ID
+        const dataset = await this.datasetsRepository.findOne({
+            where: { id: datasetId },
+            select: ["createdBy"],
+        });
+        if (!dataset?.createdBy) {
+            throw HttpErrorFactory.badRequest("知识库不存在或无效");
+        }
+
+        // 检查用户存储容量
+        const canUpload = await this.userCapacityService.canUpload(
+            dataset.createdBy,
+            meta.fileSize,
+        );
+        if (!canUpload) {
+            const capacityInfo = await this.userCapacityService.getUserCapacityInfo(
+                dataset.createdBy,
+            );
+            throw HttpErrorFactory.badRequest(
+                `知识库存储空间不足。已使用 ${this.formatBytes(capacityInfo.usedStorage)} / ${this.formatBytes(capacityInfo.totalStorage)}，请扩容后再上传。`,
+            );
+        }
+
+        const segments = this.segmentationService.segment(rawText);
+        if (segments.length === 0) {
+            throw HttpErrorFactory.badRequest("分段后无有效内容");
+        }
+
+        const characterCount = segments.reduce((sum, s) => sum + s.length, 0);
+
+        const insertResult = await this.documentRepository.insert({
+            datasetId,
+            fileId: meta.fileId,
+            fileUrl: meta.fileUrl,
+            fileName: meta.fileName,
+            fileType: meta.fileType,
+            fileSize: meta.fileSize,
+            chunkCount: segments.length,
+            characterCount,
+            status: PROCESSING_STATUS.PENDING,
+            progress: 0,
+            error: null,
+            embeddingModelId: embeddingModelId ?? null,
+            enabled: true,
+            createdBy: createdBy,
+        } as any);
+        const documentId = insertResult.identifiers[0]?.id as string;
+        if (!documentId) {
+            throw HttpErrorFactory.internal("Failed to create document");
+        }
+
+        await this.segmentService.createSegments(
+            datasetId,
+            documentId,
+            segments.map((s) => ({ content: s.content, index: s.index, length: s.length })),
+            embeddingModelId ?? null,
+        );
+
+        await this.updateDatasetCounts(datasetId, 1, segments.length, meta.fileSize);
+
+        // 清除用户容量缓存，确保前端能查询到最新的已使用空间
+        await this.userCapacityService.clearUserStorageCache(dataset.createdBy);
+
+        await this.vectorizationTrigger.triggerDocument(datasetId, documentId);
+        this.logger.log(`Document created and vectorization triggered: ${documentId}`);
+
+        this.documentSummaryService
+            .generateAndSave(documentId, rawText)
+            .catch((err) =>
+                this.logger.warn(`Document summary skipped: ${documentId} - ${err?.message}`),
+            );
+
+        const doc = await this.documentRepository.findOne({
+            where: { id: documentId },
+        });
+        if (!doc) throw HttpErrorFactory.internal("Document not found after create");
+        return doc;
+    }
+
+    private async updateDatasetCounts(
+        datasetId: string,
+        documentDelta: number,
+        chunkDelta: number,
+        storageDelta: number,
+    ): Promise<void> {
+        const normalizedDocumentDelta = Number(documentDelta) || 0;
+        const normalizedChunkDelta = Number(chunkDelta) || 0;
+        const normalizedStorageDelta = Number(storageDelta) || 0;
+
+        await this.datasetsRepository
+            .createQueryBuilder()
+            .update(Datasets)
+            .set({
+                documentCount: () => `GREATEST(document_count + ${normalizedDocumentDelta}, 0)`,
+                chunkCount: () => `GREATEST(chunk_count + ${normalizedChunkDelta}, 0)`,
+                storageSize: () => `GREATEST(storage_size + ${normalizedStorageDelta}, 0)`,
+            })
+            .where("id = :datasetId", { datasetId })
+            .execute();
+    }
+
+    private toSafeNumber(value: unknown): number {
+        const normalized = Number(value);
+        if (!Number.isFinite(normalized)) {
+            return 0;
+        }
+        return normalized;
+    }
+
+    private static readonly LIST_ORDER: Record<string, Record<string, "ASC" | "DESC">> = {
+        name: { fileName: "ASC" },
+        size: { fileSize: "ASC" },
+        uploadTime: { createdAt: "DESC" },
+    };
+
+    private static fileTypeCondition(fileType: "text" | "table" | "image"): string {
+        const tableCondition = `(document.file_type ILIKE '%spreadsheetml%' OR document.file_type ILIKE '%ms-excel%' OR document.file_type ILIKE '%csv%')`;
+        const imageCondition = `document.file_type ILIKE 'image/%'`;
+        switch (fileType) {
+            case "text":
+                return `(NOT (${tableCondition}) AND NOT (${imageCondition}))`;
+            case "table":
+                return tableCondition;
+            case "image":
+                return imageCondition;
+            default:
+                return "1=1";
+        }
+    }
+
+    async listByDataset(datasetId: string, paginationDto: ListDocumentsDto | PaginationDto) {
+        const listDto = paginationDto as ListDocumentsDto;
+        const keyword = listDto?.keyword?.trim();
+        const sortBy = listDto?.sortBy ?? "uploadTime";
+        const fileType = listDto?.fileType ?? "all";
+
+        const order =
+            DatasetsDocumentService.LIST_ORDER[sortBy] ??
+            DatasetsDocumentService.LIST_ORDER.uploadTime;
+        const orderKey = Object.keys(order)[0] as keyof DatasetsDocument;
+        const orderDir = order[orderKey] as "ASC" | "DESC";
+
+        if (fileType !== "all" || keyword) {
+            const qb = this.documentRepository
+                .createQueryBuilder("document")
+                .where("document.dataset_id = :datasetId", { datasetId });
+            if (keyword) {
+                qb.andWhere(
+                    new Brackets((b) =>
+                        b
+                            .where("document.file_name ILIKE :keyword", { keyword: `%${keyword}%` })
+                            .orWhere("document.summary ILIKE :keyword", { keyword: `%${keyword}%` })
+                            .orWhere("array_to_string(document.tags, ' ') ILIKE :keyword", {
+                                keyword: `%${keyword}%`,
+                            }),
+                    ),
+                );
+            }
+            if (fileType !== "all") {
+                qb.andWhere(DatasetsDocumentService.fileTypeCondition(fileType));
+            }
+            qb.orderBy(`document.${orderKey}`, orderDir);
+            return this.paginateQueryBuilder(qb, paginationDto);
+        }
+
+        const where = { datasetId };
+        return this.paginate(paginationDto, { where, order });
+    }
+
+    async getOne(datasetId: string, documentId: string): Promise<DatasetsDocument | null> {
+        return this.documentRepository.findOne({
+            where: { id: documentId, datasetId },
+        });
+    }
+
+    async deleteDocument(datasetId: string, documentId: string): Promise<boolean> {
+        const doc = await this.documentRepository.findOne({
+            where: { id: documentId, datasetId },
+        });
+        if (!doc) return false;
+
+        // 获取知识库创建者ID，用于清除容量缓存
+        const dataset = await this.datasetsRepository.findOne({
+            where: { id: datasetId },
+            select: ["createdBy"],
+        });
+
+        const segmentCount = this.toSafeNumber(doc.chunkCount);
+        const fileSize = this.toSafeNumber(doc.fileSize);
+        const fileId = doc.fileId;
+        await this.documentRepository.remove(doc);
+        await this.updateDatasetCounts(datasetId, -1, -segmentCount, -fileSize);
+
+        // 删除关联的文件记录
+        if (fileId) {
+            const file = await this.uploadService.getFileById(fileId);
+            if (file?.id) {
+                await this.uploadService.deleteFile(fileId);
+            }
+        }
+
+        // 清除知识库创建者的容量缓存
+        if (dataset?.createdBy) {
+            await this.userCapacityService.clearUserStorageCache(dataset.createdBy);
+        }
+
+        this.logger.log(`Document deleted: ${documentId}`);
+        await this.vectorizationTrigger.removeDocumentJobs([documentId]);
+        return true;
+    }
+
+    async retryVectorization(datasetId: string, documentId: string): Promise<void> {
+        const doc = await this.getOne(datasetId, documentId);
+        if (!doc) throw HttpErrorFactory.notFound("文档不存在");
+        if (doc.status !== PROCESSING_STATUS.FAILED) {
+            throw HttpErrorFactory.badRequest("仅失败状态的文档可以重试");
+        }
+
+        // Remove the old failed job from the queue first, otherwise BullMQ
+        // silently ignores the new job due to duplicate jobId.
+        await this.vectorizationTrigger.removeDocumentJobs([documentId]);
+
+        // Refresh embeddingModelId from dataset's current config so that retry
+        // uses the active model even if it was changed after the document was created.
+        const dataset = await this.datasetsRepository.findOne({
+            where: { id: datasetId },
+            select: ["embeddingModelId"],
+        });
+        const latestEmbeddingModelId = dataset?.embeddingModelId ?? null;
+
+        // Reset any failed segments back to pending; may be 0 if the document
+        // failed before embedding started (e.g. model not configured).
+        await this.segmentService.resetFailedSegments(documentId);
+
+        // Sync embeddingModelId on segments so the runner picks the correct model.
+        await this.segmentRepository.update(
+            { documentId },
+            { embeddingModelId: latestEmbeddingModelId ?? undefined },
+        );
+
+        await this.documentRepository.update(documentId, {
+            status: PROCESSING_STATUS.PENDING,
+            progress: 0,
+            error: null,
+            embeddingModelId: latestEmbeddingModelId,
+        });
+        await this.vectorizationTrigger.triggerDocument(datasetId, documentId);
+        this.logger.log(`Retry vectorization triggered for document: ${documentId}`);
+    }
+
+    async batchDeleteDocuments(
+        datasetId: string,
+        dto: BatchDeleteDocumentsDto,
+    ): Promise<{ deleted: number }> {
+        const docs = await this.documentRepository.find({
+            where: { datasetId, id: In(dto.documentIds) },
+            select: ["id", "chunkCount", "fileSize", "fileId"],
+        });
+        if (docs.length === 0) {
+            return { deleted: 0 };
+        }
+
+        // 获取知识库创建者ID，用于清除容量缓存
+        const dataset = await this.datasetsRepository.findOne({
+            where: { id: datasetId },
+            select: ["createdBy"],
+        });
+
+        let chunkDelta = 0;
+        let storageDelta = 0;
+        const fileIdsToDelete: string[] = [];
+        for (const doc of docs) {
+            chunkDelta += this.toSafeNumber(doc.chunkCount);
+            storageDelta += this.toSafeNumber(doc.fileSize);
+            if (doc.fileId) {
+                const file = await this.uploadService.getFileById(doc.fileId);
+                if (file?.id) {
+                    fileIdsToDelete.push(doc.fileId);
+                }
+            }
+            await this.documentRepository.remove(doc);
+        }
+        await this.updateDatasetCounts(datasetId, -docs.length, -chunkDelta, -storageDelta);
+
+        // 删除关联的文件记录
+        for (const fileId of fileIdsToDelete) {
+            await this.uploadService.deleteFile(fileId);
+        }
+
+        // 清除知识库创建者的容量缓存
+        if (dataset?.createdBy) {
+            await this.userCapacityService.clearUserStorageCache(dataset.createdBy);
+        }
+        this.logger.log(`Batch deleted ${docs.length} documents from dataset ${datasetId}`);
+        const documentIds = docs.map((d) => d.id);
+        await this.vectorizationTrigger.removeDocumentJobs(documentIds);
+        return { deleted: docs.length };
+    }
+
+    async batchMoveDocuments(
+        datasetId: string,
+        dto: BatchMoveDocumentsDto,
+        user: UserPlayground,
+    ): Promise<{ moved: number }> {
+        if (dto.targetDatasetId === datasetId) {
+            throw HttpErrorFactory.badRequest("目标知识库不能与当前知识库相同");
+        }
+        await this.datasetMemberService.checkPermission(
+            dto.targetDatasetId,
+            user,
+            "canManageDocuments",
+        );
+        const targetDataset = await this.datasetsRepository.findOne({
+            where: { id: dto.targetDatasetId },
+        });
+        if (!targetDataset) throw HttpErrorFactory.notFound("目标知识库不存在");
+
+        const docs = await this.documentRepository.find({
+            where: { datasetId, id: In(dto.documentIds) },
+            select: ["id", "chunkCount", "fileSize"],
+        });
+        if (docs.length === 0) {
+            return { moved: 0 };
+        }
+
+        const documentIds = docs.map((d) => d.id);
+        let sourceChunkDelta = 0;
+        let sourceStorageDelta = 0;
+        let targetChunkDelta = 0;
+        let targetStorageDelta = 0;
+        for (const doc of docs) {
+            sourceChunkDelta += this.toSafeNumber(doc.chunkCount);
+            sourceStorageDelta += this.toSafeNumber(doc.fileSize);
+            targetChunkDelta += this.toSafeNumber(doc.chunkCount);
+            targetStorageDelta += this.toSafeNumber(doc.fileSize);
+        }
+
+        await this.dataSource.transaction(async (manager) => {
+            await manager.update(
+                DatasetsDocument,
+                { id: In(documentIds) },
+                {
+                    datasetId: dto.targetDatasetId,
+                    embeddingModelId: targetDataset.embeddingModelId ?? null,
+                    status: PROCESSING_STATUS.PENDING,
+                    progress: 0,
+                    error: null,
+                },
+            );
+            await manager.update(
+                DatasetsSegments,
+                { documentId: In(documentIds) },
+                { datasetId: dto.targetDatasetId },
+            );
+            await manager
+                .createQueryBuilder()
+                .update(Datasets)
+                .set({
+                    documentCount: () => `document_count - ${docs.length}`,
+                    chunkCount: () => `chunk_count - ${sourceChunkDelta}`,
+                    storageSize: () => `storage_size - ${sourceStorageDelta}`,
+                })
+                .where("id = :datasetId", { datasetId })
+                .execute();
+            await manager
+                .createQueryBuilder()
+                .update(Datasets)
+                .set({
+                    documentCount: () => `document_count + ${docs.length}`,
+                    chunkCount: () => `chunk_count + ${targetChunkDelta}`,
+                    storageSize: () => `storage_size + ${targetStorageDelta}`,
+                })
+                .where("id = :targetDatasetId", { targetDatasetId: dto.targetDatasetId })
+                .execute();
+        });
+
+        for (const docId of documentIds) {
+            await this.segmentService.resetAllSegmentsForReVectorization(docId);
+            await this.vectorizationTrigger.triggerDocument(dto.targetDatasetId, docId);
+        }
+        this.logger.log(
+            `Batch moved ${docs.length} documents from dataset ${datasetId} to ${dto.targetDatasetId}, re-vectorization triggered`,
+        );
+        return { moved: docs.length };
+    }
+
+    async batchCopyDocuments(
+        datasetId: string,
+        dto: BatchCopyDocumentsDto,
+        user: UserPlayground,
+    ): Promise<{ copied: number }> {
+        if (dto.targetDatasetId === datasetId) {
+            throw HttpErrorFactory.badRequest("目标知识库不能与当前知识库相同");
+        }
+        await this.datasetMemberService.checkPermission(
+            dto.targetDatasetId,
+            user,
+            "canManageDocuments",
+        );
+        const targetDataset = await this.datasetsRepository.findOne({
+            where: { id: dto.targetDatasetId },
+        });
+        if (!targetDataset) throw HttpErrorFactory.notFound("目标知识库不存在");
+
+        const docs = await this.documentRepository.find({
+            where: { datasetId, id: In(dto.documentIds) },
+            select: [
+                "id",
+                "fileName",
+                "fileType",
+                "fileSize",
+                "fileId",
+                "fileUrl",
+                "chunkCount",
+                "characterCount",
+                "tags",
+            ],
+        });
+        if (docs.length === 0) {
+            return { copied: 0 };
+        }
+
+        const docIds = docs.map((d) => d.id);
+        const segments = await this.segmentRepository.find({
+            where: { documentId: In(docIds) },
+            select: ["documentId", "content", "chunkIndex", "contentLength"],
+            order: { chunkIndex: "ASC" },
+        });
+        const segmentsByDoc = new Map<string, typeof segments>();
+        for (const s of segments) {
+            const list = segmentsByDoc.get(s.documentId) ?? [];
+            list.push(s);
+            segmentsByDoc.set(s.documentId, list);
+        }
+
+        const targetEmbeddingModelId = targetDataset.embeddingModelId ?? null;
+        const oldToNewDocId = new Map<string, string>();
+
+        const newDocIdToRawText = new Map<string, string>();
+        let targetDocumentDelta = 0;
+        let targetChunkDelta = 0;
+        let targetStorageDelta = 0;
+
+        await this.dataSource.transaction(async (manager) => {
+            const docRepo = manager.getRepository(DatasetsDocument);
+            const segRepo = manager.getRepository(DatasetsSegments);
+            for (const doc of docs) {
+                const docSegments = segmentsByDoc.get(doc.id) ?? [];
+                const insertDoc = await docRepo.insert({
+                    datasetId: dto.targetDatasetId,
+                    fileId: doc.fileId,
+                    fileUrl: doc.fileUrl,
+                    fileName: doc.fileName,
+                    fileType: doc.fileType,
+                    fileSize: doc.fileSize,
+                    chunkCount: doc.chunkCount,
+                    characterCount: doc.characterCount,
+                    status: PROCESSING_STATUS.PENDING,
+                    progress: 0,
+                    error: null,
+                    embeddingModelId: targetEmbeddingModelId,
+                    enabled: true,
+                    createdBy: user.id,
+                    tags: doc.tags ?? undefined,
+                    summary: null,
+                    summaryGenerating: false,
+                } as any);
+                const newDocId = insertDoc.identifiers[0]?.id as string;
+                if (!newDocId) throw HttpErrorFactory.internal("Failed to create copied document");
+                oldToNewDocId.set(doc.id, newDocId);
+                const rawText = docSegments
+                    .map((s) => s.content)
+                    .join("\n\n")
+                    .trim();
+                if (rawText) newDocIdToRawText.set(newDocId, rawText);
+                targetDocumentDelta += 1;
+                targetChunkDelta += this.toSafeNumber(doc.chunkCount);
+                targetStorageDelta += this.toSafeNumber(doc.fileSize);
+
+                for (const seg of docSegments) {
+                    await segRepo.insert({
+                        datasetId: dto.targetDatasetId,
+                        documentId: newDocId,
+                        content: seg.content,
+                        chunkIndex: seg.chunkIndex,
+                        contentLength: seg.contentLength,
+                        metadata: {},
+                        status: PROCESSING_STATUS.PENDING,
+                        embeddingModelId: targetEmbeddingModelId ?? undefined,
+                        enabled: 1,
+                    } as any);
+                }
+            }
+            await manager
+                .createQueryBuilder()
+                .update(Datasets)
+                .set({
+                    documentCount: () => `document_count + ${targetDocumentDelta}`,
+                    chunkCount: () => `chunk_count + ${targetChunkDelta}`,
+                    storageSize: () => `storage_size + ${targetStorageDelta}`,
+                })
+                .where("id = :targetDatasetId", { targetDatasetId: dto.targetDatasetId })
+                .execute();
+        });
+
+        for (const newDocId of oldToNewDocId.values()) {
+            await this.vectorizationTrigger.triggerDocument(dto.targetDatasetId, newDocId);
+        }
+        for (const [newDocId, rawText] of newDocIdToRawText) {
+            this.documentSummaryService
+                .generateAndSave(newDocId, rawText)
+                .catch((err) =>
+                    this.logger.warn(
+                        `Document summary skipped for copied doc ${newDocId}: ${err?.message}`,
+                    ),
+                );
+        }
+        this.logger.log(
+            `Batch copied ${docs.length} documents from dataset ${datasetId} to ${dto.targetDatasetId}, vectorization and summary triggered`,
+        );
+        return { copied: docs.length };
+    }
+
+    async batchAddTags(datasetId: string, dto: BatchAddTagsDto): Promise<{ updated: number }> {
+        const docs = await this.documentRepository.find({
+            where: { datasetId, id: In(dto.documentIds) },
+            select: ["id", "tags"],
+        });
+        if (docs.length === 0) {
+            return { updated: 0 };
+        }
+        const normalizedNewTags = [...new Set(dto.tags.map((t) => t.trim()).filter(Boolean))];
+        if (normalizedNewTags.length === 0) {
+            throw HttpErrorFactory.badRequest("至少需要提供一个有效标签");
+        }
+        let updated = 0;
+        for (const doc of docs) {
+            const existing = doc.tags ?? [];
+            const merged = [...new Set([...existing, ...normalizedNewTags])];
+            if (merged.length !== existing.length) {
+                await this.documentRepository.update(doc.id, { tags: merged });
+                updated++;
+            }
+        }
+        this.logger.log(`Batch add tags: ${updated} documents updated in dataset ${datasetId}`);
+        return { updated };
+    }
+
+    /**
+     * 格式化字节大小为可读格式
+     */
+    private formatBytes(bytes: number): string {
+        if (bytes === 0) return "0 B";
+        const k = 1024;
+        const sizes = ["B", "KB", "MB", "GB", "TB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+    }
+
+    /**
+     * Detect whether file source should be treated as a PDF file.
+     */
+    private isPdfFile(fileName: string, mimeType?: string, url?: string): boolean {
+        const normalizedMimeType = mimeType?.toLowerCase();
+        const normalizedFileName = fileName.toLowerCase();
+        const normalizedUrl = url?.toLowerCase() ?? "";
+        return (
+            normalizedMimeType === "application/pdf" ||
+            normalizedMimeType === "pdf" ||
+            normalizedFileName.endsWith(".pdf") ||
+            normalizedUrl.includes(".pdf")
+        );
+    }
+
+    async updateDocumentTags(
+        datasetId: string,
+        documentId: string,
+        tags: string[],
+    ): Promise<DatasetsDocument | null> {
+        const doc = await this.documentRepository.findOne({
+            where: { id: documentId, datasetId },
+            select: ["id", "tags"],
+        });
+        if (!doc) return null;
+        const normalized = [...new Set(tags.map((t) => t.trim()).filter(Boolean))];
+        await this.documentRepository.update(documentId, { tags: normalized });
+        return this.documentRepository.findOne({
+            where: { id: documentId, datasetId },
+        });
+    }
+}

@@ -1,0 +1,456 @@
+import { BaseService } from "@buildingai/base";
+import { RETRIEVAL_MODE } from "@buildingai/constants/shared/datasets.constants";
+import { TagType } from "@buildingai/constants/shared/tag.constant";
+import { type UserPlayground } from "@buildingai/db";
+import { InjectRepository } from "@buildingai/db/@nestjs/typeorm";
+import {
+    DatasetMember,
+    DatasetMemberApplication,
+    Datasets,
+    DatasetsChatMessage,
+    DatasetsChatRecord,
+    DatasetsDocument,
+    DatasetsSegments,
+    SquarePublishStatus,
+    Tag,
+    User,
+} from "@buildingai/db/entities";
+import { In, Repository } from "@buildingai/db/typeorm";
+import { PaginationDto } from "@buildingai/dto/pagination.dto";
+import { HttpErrorFactory } from "@buildingai/errors";
+import { DatasetsConfigService } from "@modules/config/services/datasets-config.service";
+import { Injectable, Logger } from "@nestjs/common";
+
+import { CreateEmptyDatasetDto } from "../dto/create-empty-dataset.dto";
+import type { ListSquareDatasetsDto } from "../dto/list-square-datasets.dto";
+import type { SetDatasetVectorConfigDto } from "../dto/set-dataset-vector-config.dto";
+import { UpdateDatasetDto } from "../dto/update-dataset.dto";
+import { DatasetMemberService } from "./datasets-member.service";
+import { VectorizationTriggerService } from "./vectorization-trigger.service";
+
+/**
+ * 知识库服务
+ *
+ * 提供知识库创建等能力。
+ */
+@Injectable()
+export class DatasetsService extends BaseService<Datasets> {
+    protected readonly logger = new Logger(DatasetsService.name);
+
+    constructor(
+        @InjectRepository(Datasets)
+        private readonly datasetsRepository: Repository<Datasets>,
+        @InjectRepository(DatasetsSegments)
+        private readonly segmentRepository: Repository<DatasetsSegments>,
+        @InjectRepository(DatasetsDocument)
+        private readonly documentRepository: Repository<DatasetsDocument>,
+        @InjectRepository(DatasetsChatRecord)
+        private readonly chatRecordRepository: Repository<DatasetsChatRecord>,
+        @InjectRepository(DatasetsChatMessage)
+        private readonly chatMessageRepository: Repository<DatasetsChatMessage>,
+        @InjectRepository(DatasetMemberApplication)
+        private readonly applicationRepository: Repository<DatasetMemberApplication>,
+        @InjectRepository(DatasetMember)
+        private readonly datasetMemberRepository: Repository<DatasetMember>,
+        @InjectRepository(Tag)
+        private readonly tagRepository: Repository<Tag>,
+        private readonly datasetMemberService: DatasetMemberService,
+        private readonly datasetsConfigService: DatasetsConfigService,
+        private readonly vectorizationTrigger: VectorizationTriggerService,
+    ) {
+        super(datasetsRepository);
+    }
+
+    /**
+     * 创建空知识库
+     *
+     * 向量模型 ID 与检索设置从 config 字典表（datasets_config）读取。
+     */
+    async createEmptyDataset(dto: CreateEmptyDatasetDto, user: UserPlayground): Promise<Datasets> {
+        const { name, description, coverUrl } = dto;
+
+        const existing = await this.findOne({ where: { name, createdBy: user.id } });
+        if (existing) throw HttpErrorFactory.badRequest("Dataset name already exists");
+
+        const [embeddingModelId, retrievalConfig] = await Promise.all([
+            this.datasetsConfigService.getEmbeddingModelId(),
+            this.datasetsConfigService.getDefaultRetrievalConfig(),
+        ]);
+        if (!embeddingModelId?.trim()) {
+            throw HttpErrorFactory.badRequest(
+                "公共向量模型未配置，请在后台「知识库配置」中设置 embedding_model_id",
+            );
+        }
+
+        const created = await this.create({
+            name,
+            description,
+            ...(coverUrl !== undefined && { coverUrl }),
+            createdBy: user.id,
+            embeddingModelId: embeddingModelId.trim(),
+            retrievalMode: retrievalConfig.retrievalMode ?? RETRIEVAL_MODE.HYBRID,
+            retrievalConfig,
+        });
+        const dataset = (await this.findOneById(created.id!)) as Datasets;
+        await this.datasetMemberService.initializeOwner(dataset.id, user.id);
+        this.logger.log(`[+] Empty dataset created: ${user.id}`);
+        return dataset;
+    }
+
+    async updateDataset(
+        datasetId: string,
+        dto: UpdateDatasetDto,
+        userId: string,
+    ): Promise<Datasets> {
+        await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        await this.datasetMemberService.requireCreator(datasetId, userId);
+
+        const payload: Record<string, unknown> = {};
+        if (dto.name !== undefined) payload.name = dto.name;
+        if (dto.description !== undefined) payload.description = dto.description;
+        if (dto.coverUrl !== undefined) payload.coverUrl = dto.coverUrl;
+        if (Object.keys(payload).length === 0) {
+            return this.findOneById(datasetId) as Promise<Datasets>;
+        }
+        await this.datasetsRepository.update(datasetId, payload);
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async updateVectorConfig(datasetId: string, dto: SetDatasetVectorConfigDto): Promise<Datasets> {
+        await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        const payload: Record<string, unknown> = {};
+        if (dto.embeddingModelId !== undefined) payload.embeddingModelId = dto.embeddingModelId;
+        if (dto.retrievalMode !== undefined) payload.retrievalMode = dto.retrievalMode;
+        if (dto.retrievalConfig !== undefined) payload.retrievalConfig = dto.retrievalConfig;
+        if (Object.keys(payload).length === 0) {
+            return this.findOneById(datasetId) as Promise<Datasets>;
+        }
+        await this.datasetsRepository.update(datasetId, payload);
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async publishToSquare(
+        datasetId: string,
+        userId: string,
+        tagIds?: string[],
+        memberJoinApprovalRequired?: boolean,
+    ): Promise<Datasets> {
+        const dataset = await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        await this.datasetMemberService.requireCreator(datasetId, userId);
+        const status = (dataset as Datasets).squarePublishStatus ?? SquarePublishStatus.NONE;
+        if (status === SquarePublishStatus.PENDING) {
+            throw HttpErrorFactory.badRequest("已提交审核，请等待审核结果");
+        }
+        if (dataset.publishedToSquare || status === SquarePublishStatus.APPROVED) {
+            throw HttpErrorFactory.badRequest("该知识库已发布到广场");
+        }
+        const skipReview = await this.datasetsConfigService.getSquarePublishSkipReview();
+        const updatePayload: Partial<Datasets> = {};
+        if (memberJoinApprovalRequired !== undefined) {
+            updatePayload.memberJoinApprovalRequired = memberJoinApprovalRequired;
+        }
+        if (skipReview) {
+            updatePayload.squarePublishStatus = SquarePublishStatus.APPROVED;
+            updatePayload.publishedToSquare = true;
+            updatePayload.publishedAt = new Date();
+        } else {
+            updatePayload.squarePublishStatus = SquarePublishStatus.PENDING;
+        }
+        await this.datasetsRepository.update(datasetId, updatePayload);
+        const ids = Array.isArray(tagIds) ? tagIds.filter(Boolean) : [];
+        const tags = await this.tagRepository.find({
+            where: { id: In(ids), type: TagType.DATASET },
+        });
+        const entity = await this.datasetsRepository.findOne({
+            where: { id: datasetId },
+            relations: { tags: true },
+        });
+        if (entity) {
+            entity.tags = tags;
+            await this.datasetsRepository.save(entity);
+        }
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async unpublishFromSquare(datasetId: string, userId: string): Promise<Datasets> {
+        const dataset = await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        await this.datasetMemberService.requireCreator(datasetId, userId);
+        const status = (dataset as Datasets).squarePublishStatus ?? SquarePublishStatus.NONE;
+        if (!dataset.publishedToSquare && status !== SquarePublishStatus.PENDING) {
+            throw HttpErrorFactory.badRequest("该知识库未发布到广场");
+        }
+        await this.datasetsRepository.update(datasetId, {
+            publishedToSquare: false,
+            publishedAt: null,
+            squarePublishStatus: SquarePublishStatus.NONE,
+            squareReviewedBy: null,
+            squareReviewedAt: null,
+            squareRejectReason: null,
+        });
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async approveSquarePublish(datasetId: string, operatorId: string): Promise<Datasets> {
+        const dataset = await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        const status = (dataset as Datasets).squarePublishStatus ?? SquarePublishStatus.NONE;
+        if (status !== SquarePublishStatus.PENDING) {
+            throw HttpErrorFactory.badRequest("当前状态不可审核通过，仅待审核申请可操作");
+        }
+        await this.datasetsRepository.update(datasetId, {
+            squarePublishStatus: SquarePublishStatus.APPROVED,
+            publishedToSquare: true,
+            publishedAt: new Date(),
+            squareReviewedBy: operatorId,
+            squareReviewedAt: new Date(),
+            squareRejectReason: null,
+        });
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async publishSquareByAdmin(datasetId: string): Promise<Datasets> {
+        const dataset = await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        const status = (dataset as Datasets).squarePublishStatus ?? SquarePublishStatus.NONE;
+        if (status !== SquarePublishStatus.APPROVED) {
+            throw HttpErrorFactory.badRequest("当前状态不可上架，仅审核通过的知识库可操作");
+        }
+        if (dataset.publishedToSquare) {
+            throw HttpErrorFactory.badRequest("该知识库已上架到广场");
+        }
+        await this.datasetsRepository.update(datasetId, {
+            publishedToSquare: true,
+            publishedAt: new Date(),
+        });
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async unpublishSquareByAdmin(datasetId: string): Promise<Datasets> {
+        const dataset = await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        const status = (dataset as Datasets).squarePublishStatus ?? SquarePublishStatus.NONE;
+        if (status !== SquarePublishStatus.APPROVED) {
+            throw HttpErrorFactory.badRequest("当前状态不可下架，仅审核通过的知识库可操作");
+        }
+        if (!dataset.publishedToSquare) {
+            throw HttpErrorFactory.badRequest("该知识库当前未上架到广场");
+        }
+        await this.datasetsRepository.update(datasetId, {
+            publishedToSquare: false,
+            publishedAt: null,
+        });
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async rejectSquarePublish(
+        datasetId: string,
+        operatorId: string,
+        reason?: string | null,
+    ): Promise<Datasets> {
+        const dataset = await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        const status = (dataset as Datasets).squarePublishStatus ?? SquarePublishStatus.NONE;
+        if (status !== SquarePublishStatus.PENDING) {
+            throw HttpErrorFactory.badRequest("当前状态不可审核拒绝，仅待审核申请可操作");
+        }
+        await this.datasetsRepository.update(datasetId, {
+            squarePublishStatus: SquarePublishStatus.REJECTED,
+            squareReviewedBy: operatorId,
+            squareReviewedAt: new Date(),
+            squareRejectReason: reason ?? null,
+        });
+        return this.findOneById(datasetId) as Promise<Datasets>;
+    }
+
+    async listForConsole(
+        paginationDto: PaginationDto,
+        filters: { name?: string; status?: string; tagId?: string },
+    ) {
+        const { name, status, tagId } = filters;
+
+        let qb = this.datasetsRepository
+            .createQueryBuilder("d")
+            .addSelect(
+                "CASE WHEN d.square_publish_status = :pendingStatus THEN 0 ELSE 1 END",
+                "pending_review_sort",
+            )
+            .leftJoinAndSelect("d.tags", "tags")
+            .leftJoin(User, "u", "u.id = d.createdBy")
+            .orderBy("pending_review_sort", "ASC")
+            .addOrderBy("d.updatedAt", "DESC")
+            .setParameter("pendingStatus", SquarePublishStatus.PENDING);
+
+        if (tagId) {
+            qb = qb.innerJoin(
+                "datasets_tags",
+                "dt",
+                "dt.dataset_id = d.id AND dt.tag_id = :tagId",
+                {
+                    tagId,
+                },
+            );
+        }
+
+        if (name) {
+            qb.andWhere("d.name ILIKE :name OR u.nickname ILIKE :name OR u.username ILIKE :name", {
+                name: `%${name}%`,
+            });
+        }
+
+        if (status && status !== "all") {
+            if (status === "published") {
+                qb.andWhere("d.published_to_square = :published", { published: true });
+                qb.andWhere("d.square_publish_status = :status", {
+                    status: SquarePublishStatus.APPROVED,
+                });
+            } else if (status === "unpublished") {
+                qb.andWhere("d.published_to_square = :published", { published: false });
+                qb.andWhere("d.square_publish_status = :status", {
+                    status: SquarePublishStatus.APPROVED,
+                });
+            } else {
+                qb.andWhere("d.square_publish_status = :status", { status });
+            }
+        }
+
+        const result = await this.paginateQueryBuilder(qb, paginationDto);
+
+        return {
+            ...result,
+            extend: await this.getDatasetStatistics(),
+        };
+    }
+
+    private async getDatasetStatistics() {
+        const total = await this.datasetsRepository.count();
+
+        const pending = await this.datasetsRepository.count({
+            where: { squarePublishStatus: SquarePublishStatus.PENDING },
+        });
+
+        const published = await this.datasetsRepository.count({
+            where: {
+                publishedToSquare: true,
+                squarePublishStatus: SquarePublishStatus.APPROVED,
+            },
+        });
+
+        const privateCount = await this.datasetsRepository.count({
+            where: {
+                squarePublishStatus: SquarePublishStatus.NONE,
+                publishedToSquare: false,
+            },
+        });
+
+        const unpublished = await this.datasetsRepository.count({
+            where: {
+                squarePublishStatus: SquarePublishStatus.APPROVED,
+                publishedToSquare: false,
+            },
+        });
+
+        return {
+            total,
+            pending,
+            published,
+            private: privateCount,
+            unpublished,
+        };
+    }
+
+    async listMyCreated(userId: string, paginationDto: PaginationDto) {
+        return this.paginate(paginationDto, {
+            where: { createdBy: userId },
+            order: { updatedAt: "DESC" },
+        });
+    }
+
+    async listTeam(userId: string, paginationDto: PaginationDto) {
+        const qb = this.datasetsRepository
+            .createQueryBuilder("d")
+            .innerJoin(
+                "dataset_members",
+                "m",
+                "m.dataset_id = d.id AND m.user_id = :userId AND m.is_active = true",
+                { userId },
+            )
+            .where("d.createdBy != :userId", { userId })
+            .orderBy("d.updatedAt", "DESC");
+
+        return this.paginateQueryBuilder(qb, paginationDto);
+    }
+
+    async listSquare(dto: ListSquareDatasetsDto) {
+        const { keyword, tagIds, ...paginationDto } = dto;
+        const qb = this.datasetsRepository
+            .createQueryBuilder("d")
+            .leftJoinAndSelect("d.tags", "tags")
+            .where("d.publishedToSquare = :published", { published: true })
+            .andWhere("d.squarePublishStatus = :status", { status: SquarePublishStatus.APPROVED })
+            .orderBy("d.updatedAt", "DESC");
+
+        if (keyword?.trim()) {
+            qb.andWhere("(d.name ILIKE :keyword OR d.description ILIKE :keyword)", {
+                keyword: `%${keyword.trim()}%`,
+            });
+        }
+        if (tagIds?.length) {
+            qb.innerJoin(
+                "datasets_tags",
+                "dt",
+                "dt.dataset_id = d.id AND dt.tag_id IN (:...tagIds)",
+                {
+                    tagIds,
+                },
+            );
+        }
+        return this.paginateQueryBuilder(qb, paginationDto);
+    }
+
+    async deleteDataset(datasetId: string, userId: string): Promise<{ success: boolean }> {
+        await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        await this.datasetMemberService.requireCreator(datasetId, userId);
+
+        await this.dataSource.transaction(async (manager) => {
+            const records = await manager
+                .getRepository(DatasetsChatRecord)
+                .find({ where: { datasetId }, select: { id: true } });
+            const conversationIds = records.map((r) => r.id);
+            if (conversationIds.length > 0) {
+                await manager.getRepository(DatasetsChatMessage).delete({
+                    conversationId: In(conversationIds),
+                });
+            }
+            await manager.getRepository(DatasetsChatRecord).delete({ datasetId });
+            await manager.getRepository(DatasetsSegments).delete({ datasetId });
+            await manager.getRepository(DatasetsDocument).delete({ datasetId });
+            await manager.getRepository(DatasetMemberApplication).delete({ datasetId });
+            await manager.getRepository(DatasetMember).delete({ datasetId });
+            await manager.getRepository(Datasets).delete({ id: datasetId });
+        });
+
+        await this.vectorizationTrigger.removeDatasetJobs(datasetId);
+        this.logger.log(`[+] Deleted dataset: ${datasetId}`);
+        return { success: true };
+    }
+
+    async deleteDatasetForConsole(datasetId: string): Promise<{ success: boolean }> {
+        await this.datasetMemberService.getDatasetOrThrow(datasetId);
+        await this.dataSource.transaction(async (manager) => {
+            const records = await manager
+                .getRepository(DatasetsChatRecord)
+                .find({ where: { datasetId }, select: { id: true } });
+            const conversationIds = records.map((r) => r.id);
+            if (conversationIds.length > 0) {
+                await manager.getRepository(DatasetsChatMessage).delete({
+                    conversationId: In(conversationIds),
+                });
+            }
+            await manager.getRepository(DatasetsChatRecord).delete({ datasetId });
+            await manager.getRepository(DatasetsSegments).delete({ datasetId });
+            await manager.getRepository(DatasetsDocument).delete({ datasetId });
+            await manager.getRepository(DatasetMemberApplication).delete({ datasetId });
+            await manager.getRepository(DatasetMember).delete({ datasetId });
+            await manager.getRepository(Datasets).delete({ id: datasetId });
+        });
+        await this.vectorizationTrigger.removeDatasetJobs(datasetId);
+        this.logger.log(`[+] Console deleted dataset: ${datasetId}`);
+        return { success: true };
+    }
+}

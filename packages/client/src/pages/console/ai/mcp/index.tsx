@@ -1,0 +1,423 @@
+import { useDocumentHead } from "@buildingai/hooks";
+import {
+  type McpServer,
+  type QueryAiMcpServerDto,
+  useCheckMcpConnectionMutation,
+  useClearDefaultQuickMenuMutation,
+  useDeleteMcpServerMutation,
+  useMcpServersListQuery,
+  useSetDefaultQuickMenuMutation,
+  useToggleMcpServerActiveMutation,
+} from "@buildingai/services/console";
+import { PermissionGuard } from "@buildingai/ui/components/auth/permission-guard";
+import SvgIcons from "@buildingai/ui/components/svg-icons";
+import { Avatar, AvatarFallback, AvatarImage } from "@buildingai/ui/components/ui/avatar";
+import { Badge } from "@buildingai/ui/components/ui/badge";
+import { Button } from "@buildingai/ui/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@buildingai/ui/components/ui/dropdown-menu";
+import { Input } from "@buildingai/ui/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@buildingai/ui/components/ui/select";
+import { Skeleton } from "@buildingai/ui/components/ui/skeleton";
+import { StatusBadge } from "@buildingai/ui/components/ui/status-badge";
+import { Switch } from "@buildingai/ui/components/ui/switch";
+import { useAlertDialog } from "@buildingai/ui/hooks/use-alert-dialog";
+import {
+  ChevronRight,
+  Edit,
+  EllipsisVertical,
+  FileJson2,
+  Hammer,
+  Plus,
+  RefreshCw,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { useDebounceValue } from "usehooks-ts";
+
+import { PageContainer } from "@/layouts/console/_components/page-container";
+
+import { McpFormDialog } from "./_components/mcp-form-dialog";
+import { McpImportDialog } from "./_components/mcp-import-dialog";
+import { McpToolsDialog } from "./_components/mcp-tools-dialog";
+
+type ConnectionStatusBadgeProps = {
+  server: McpServer;
+  isChecking?: boolean;
+};
+
+const ConnectionStatusBadge = ({ server, isChecking }: ConnectionStatusBadgeProps) => {
+  if (isChecking) {
+    return (
+      <Badge variant="outline" className="text-muted-foreground pr-1.5 pl-1">
+        <RefreshCw className="size-3.5 animate-spin" />
+        测试中...
+      </Badge>
+    );
+  }
+
+  return <StatusBadge active={server.connectable} activeText="可连通" inactiveText="不可连通" />;
+};
+
+const AiMcpIndexPage = () => {
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword] = useDebounceValue(keyword.trim(), 300);
+  const [queryParams, setQueryParams] = useState<QueryAiMcpServerDto>({});
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [editingServer, setEditingServer] = useState<McpServer | null>(null);
+  const [toolsDialogServer, setToolsDialogServer] = useState<McpServer | null>(null);
+  const [checkingServerId, setCheckingServerId] = useState<string | null>(null);
+
+  const { data, refetch, isLoading } = useMcpServersListQuery(queryParams);
+  const { confirm } = useAlertDialog();
+
+  useDocumentHead({
+    title: "MCP管理",
+  });
+
+  // Update query params when debounced keyword changes
+  useEffect(() => {
+    setQueryParams((prev) => ({
+      ...prev,
+      name: debouncedKeyword || undefined,
+    }));
+  }, [debouncedKeyword]);
+
+  const toggleActiveMutation = useToggleMcpServerActiveMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      refetch();
+    },
+  });
+
+  const deleteMutation = useDeleteMcpServerMutation({
+    onSuccess: () => {
+      toast.success("MCP服务已删除");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(`删除失败: ${error.message}`);
+    },
+  });
+
+  const checkConnectionMutation = useCheckMcpConnectionMutation({
+    onSuccess: (data) => {
+      if (data.connectable) {
+        const { created, updated, deleted, total } = data.toolsInfo ?? {};
+        const parts = [
+          created && `新增 ${created} 个`,
+          updated && `更新 ${updated} 个`,
+          deleted && `删除 ${deleted} 个`,
+        ].filter(Boolean);
+        const toolsSummary = parts.length ? parts.join("、") + "工具" : `共 ${total ?? 0} 个工具`;
+        toast.success(`连通正常，${toolsSummary}`);
+      } else {
+        toast.error(data.message || "连接失败");
+      }
+      refetch();
+      setCheckingServerId(null);
+    },
+    onError: () => {
+      setCheckingServerId(null);
+    },
+  });
+
+  const setQuickMenuMutation = useSetDefaultQuickMenuMutation({
+    onSuccess: () => {
+      toast.success("快捷菜单设置成功");
+      refetch();
+    },
+  });
+
+  const clearQuickMenuMutation = useClearDefaultQuickMenuMutation({
+    onSuccess: () => {
+      toast.success("已取消快捷菜单");
+      refetch();
+    },
+  });
+
+  const handleToggleStatus = async (server: McpServer) => {
+    await confirm({
+      title: "MCP服务状态",
+      description: `确定要${server.isDisabled ? "启用" : "禁用"}该MCP服务吗？`,
+    });
+    toggleActiveMutation.mutate({ id: server.id, isDisabled: !server.isDisabled });
+  };
+
+  const handleDelete = async (server: McpServer) => {
+    await confirm({
+      title: "删除MCP服务",
+      description: "确定要删除该MCP服务吗？此操作不可恢复。",
+    });
+    deleteMutation.mutate(server.id);
+  };
+
+  const handleCheckConnection = (server: McpServer) => {
+    setCheckingServerId(server.id);
+    checkConnectionMutation.mutate(server.id);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setKeyword(value);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setQueryParams((prev) => ({
+      ...prev,
+      isDisabled: value === "all" ? undefined : value === "disabled",
+    }));
+  };
+
+  const handleSetQuickMenu = (server: McpServer) => {
+    setQuickMenuMutation.mutate(server.id);
+  };
+
+  const handleClearQuickMenu = () => {
+    clearQuickMenuMutation.mutate();
+  };
+
+  const handleCreate = () => {
+    setEditingServer(null);
+    setFormDialogOpen(true);
+  };
+
+  const handleEdit = (server: McpServer) => {
+    setEditingServer(server);
+    setFormDialogOpen(true);
+  };
+
+  const handleImport = () => {
+    setImportDialogOpen(true);
+  };
+
+  return (
+    <PageContainer>
+      <div className="flex flex-col gap-4">
+        <div className="bg-background sticky top-0 z-2 grid grid-cols-1 gap-4 pt-1 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <Input
+            placeholder="搜索MCP服务名称"
+            className="text-sm"
+            value={keyword}
+            onChange={handleSearchChange}
+          />
+          <Select onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="服务状态" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="enabled">已启用</SelectItem>
+              <SelectItem value="disabled">已禁用</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <PermissionGuard permissions="ai-mcp-servers:create">
+            <div className="bg-card flex flex-col gap-4 rounded-lg border border-dashed p-4 hover:border-solid">
+              <div className="flex cursor-pointer items-center gap-3" onClick={handleCreate}>
+                <Button className="size-12 rounded-lg border-dashed" variant="outline">
+                  <Plus />
+                </Button>
+                <div className="flex flex-col">
+                  <span>添加MCP服务</span>
+                  <span className="text-muted-foreground py-1 text-xs font-medium">
+                    添加新的MCP服务配置
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex min-h-6 flex-1 items-end gap-4">
+                <PermissionGuard permissions="ai-mcp-servers:import" blockOnly>
+                  <Button size="xs" className="flex-1" variant="outline" onClick={handleImport}>
+                    <FileJson2 /> 从JSON导入
+                  </Button>
+                </PermissionGuard>
+                <PermissionGuard permissions="ai-mcp-servers:create">
+                  <Button size="xs" className="flex-1" variant="outline" onClick={handleCreate}>
+                    <Plus /> 手动创建
+                  </Button>
+                </PermissionGuard>
+              </div>
+            </div>
+          </PermissionGuard>
+
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="bg-card flex h-36.5 flex-col gap-4 rounded-lg border p-4">
+                <div className="flex gap-3">
+                  <Skeleton className="size-12 rounded-lg" />
+                  <div className="flex h-full flex-1 flex-col justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="mt-2 h-4 w-full" />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                </div>
+              </div>
+            ))
+          ) : data?.items && data?.items.length > 0 ? (
+            data?.items.map((server) => (
+              <div
+                key={server.id}
+                className="bg-card group/mcp-item relative flex flex-col gap-4 rounded-lg border p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="relative size-12 rounded-lg after:rounded-lg">
+                    <AvatarImage src={server.icon || ""} alt={server.name} className="rounded-lg" />
+                    <AvatarFallback className="size-12 rounded-lg">
+                      <SvgIcons.mcp className="size-8" />
+                    </AvatarFallback>
+                    <div className="center absolute inset-0 z-1 rounded-lg bg-black/5 opacity-0 backdrop-blur-xl transition-opacity group-hover/mcp-item:opacity-100 dark:bg-black/15">
+                      <PermissionGuard permissions="ai-mcp-servers:toggle-active">
+                        <Switch
+                          checked={!server.isDisabled}
+                          onCheckedChange={() => handleToggleStatus(server)}
+                          disabled={toggleActiveMutation.isPending}
+                        />
+                      </PermissionGuard>
+                    </div>
+                  </Avatar>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="line-clamp-1">{server.name}</span>
+                    <PermissionGuard permissions="ai-mcp-servers:detail" blockOnly>
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        className="text-muted-foreground px-0 hover:px-2"
+                        onClick={() => setToolsDialogServer(server)}
+                      >
+                        <Hammer />
+                        查看工具({server.toolsCount || 0})
+                        <ChevronRight />
+                      </Button>
+                    </PermissionGuard>
+                  </div>
+
+                  <PermissionGuard
+                    permissions={[
+                      "ai-mcp-servers:check-connection",
+                      "ai-mcp-servers:quick-menu-set",
+                      "ai-mcp-servers:update",
+                      "ai-mcp-servers:delete",
+                    ]}
+                    any
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button className="absolute top-2 right-2" size="icon-sm" variant="ghost">
+                          <EllipsisVertical />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <PermissionGuard permissions="ai-mcp-servers:check-connection">
+                          <DropdownMenuItem onClick={() => handleCheckConnection(server)}>
+                            <RefreshCw />
+                            连通测试
+                          </DropdownMenuItem>
+                        </PermissionGuard>
+                        <PermissionGuard permissions="ai-mcp-servers:quick-menu-set">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              server.isQuickMenu
+                                ? handleClearQuickMenu()
+                                : handleSetQuickMenu(server)
+                            }
+                            disabled={
+                              (server.isQuickMenu
+                                ? clearQuickMenuMutation.isPending
+                                : setQuickMenuMutation.isPending) || false
+                            }
+                          >
+                            <Star />
+                            {server.isQuickMenu ? "取消快捷菜单" : "设为快捷菜单"}
+                          </DropdownMenuItem>
+                        </PermissionGuard>
+                        <PermissionGuard permissions="ai-mcp-servers:update">
+                          <DropdownMenuItem onClick={() => handleEdit(server)}>
+                            <Edit />
+                            编辑
+                          </DropdownMenuItem>
+                        </PermissionGuard>
+                        <DropdownMenuSeparator />
+                        <PermissionGuard permissions="ai-mcp-servers:delete">
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => handleDelete(server)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 />
+                            删除
+                          </DropdownMenuItem>
+                        </PermissionGuard>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </PermissionGuard>
+                </div>
+
+                <div className="flex min-h-6 flex-col gap-2">
+                  <div className="mt-auto flex flex-wrap items-center gap-2">
+                    <StatusBadge active={!server.isDisabled} />
+                    <ConnectionStatusBadge
+                      server={server}
+                      isChecking={checkingServerId === server.id}
+                    />
+                    {server.isQuickMenu && <Badge variant="outline">快捷菜单</Badge>}
+                    <Badge variant="secondary">{server.communicationType}</Badge>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-1 flex h-36.5 items-center justify-center gap-4 sm:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-5">
+              <span className="text-muted-foreground text-sm">
+                {queryParams.name
+                  ? `没有找到与"${queryParams.name}"相关的MCP服务`
+                  : "暂无MCP服务数据"}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+      <McpFormDialog
+        open={formDialogOpen}
+        onOpenChange={setFormDialogOpen}
+        server={editingServer}
+        onSuccess={refetch}
+      />
+
+      <McpImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onSuccess={refetch}
+      />
+
+      <McpToolsDialog
+        open={!!toolsDialogServer}
+        onOpenChange={(open) => !open && setToolsDialogServer(null)}
+        server={toolsDialogServer}
+      />
+    </PageContainer>
+  );
+};
+
+export default AiMcpIndexPage;

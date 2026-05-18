@@ -1,0 +1,1 @@
+export { defineExtensionViteConfig } from "./defineExtensionViteConfig";

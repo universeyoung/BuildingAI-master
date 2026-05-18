@@ -1,0 +1,49 @@
+{
+    "name": "@buildingai/services",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix"
+    },
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "require": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./shared": {
+            "import": "./src/shared/index.ts",
+            "require": "./src/shared/index.ts",
+            "types": "./src/shared/index.ts"
+        },
+        "./web": {
+            "import": "./src/web/index.ts",
+            "require": "./src/web/index.ts",
+            "types": "./src/web/index.ts"
+        },
+        "./console": {
+            "import": "./src/console/index.ts",
+            "require": "./src/console/index.ts",
+            "types": "./src/console/index.ts"
+        }
+    },
+    "dependencies": {
+        "@buildingai/ai-sdk": "workspace:*",
+        "@buildingai/constants": "workspace:*",
+        "@buildingai/db": "workspace:*",
+        "@buildingai/http": "workspace:*",
+        "@buildingai/stores": "workspace:*",
+        "@buildingai/types": "workspace:*",
+        "@tanstack/react-query": "^5.62.16"
+    },
+    "peerDependencies": {
+        "react": ">=19"
+    },
+    "devDependencies": {
+        "@buildingai/eslint-config": "workspace:*",
+        "@buildingai/typescript-config": "workspace:*",
+        "@buildingai/web-types": "workspace:*"
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "name": "@buildingai/web-core",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix"
+    },
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "require": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./vite/extension": {
+            "import": "./src/vite/defineExtensionViteConfig.ts",
+            "require": "./src/vite/defineExtensionViteConfig.ts",
+            "types": "./src/vite/defineExtensionViteConfig.ts"
+        }
+    },
+    "dependencies": {
+        "@buildingai/ui": "workspace:*",
+        "react": "catalog:web",
+        "react-router-dom": "catalog:web",
+        "@types/react": "catalog:web"
+    },
+    "devDependencies": {
+        "@buildingai/eslint-config": "workspace:*",
+        "@buildingai/typescript-config": "workspace:*",
+        "@rolldown/plugin-babel": "catalog:web"
+    }
+}

@@ -1,0 +1,73 @@
+{
+    "name": "extension-starter",
+    "version": "0.0.1",
+    "description": "A simple blog extension",
+    "author": "BuildingAI Teams",
+    "private": true,
+    "main": "./manifest.json",
+    "module": "./manifest.json",
+    "files": [
+        "build/**/*"
+    ],
+    "exports": {
+        ".": {
+            "import": "./manifest.json",
+            "require": "./manifest.json"
+        },
+        "./api": {
+            "types": "./build/index.d.ts",
+            "import": "./build/index.js",
+            "require": "./build/index.js"
+        },
+        "./*": "./*"
+    },
+    "scripts": {
+        "build:clean": "rimraf build .nuxt .output .temp",
+        "dev:web": "vite",
+        "dev:api": "cross-env NODE_ENV=development tsup --watch src/api",
+        "dev": "concurrently -n web,api -c cyan,magenta \"pnpm dev:web\" \"pnpm dev:api\"",
+        "build:api": "cross-env NODE_ENV=production tsup",
+        "build:web": "vite build",
+        "build:publish": "pnpm build:clean && pnpm run build:web && pnpm run build:api",
+        "format": "prettier --write src",
+        "lint": "eslint src --quiet",
+        "lint:fix": "eslint src --fix",
+        "check-types": "vue-tsc --noEmit",
+        "i18n:translate": "node ../../scripts/translate-i18n.mjs"
+    },
+    "dependencies": {
+        "@buildingai/base": "workspace:*",
+        "@buildingai/constants": "workspace:*",
+        "@buildingai/core": "workspace:*",
+        "@buildingai/db": "workspace:*",
+        "@buildingai/decorators": "workspace:*",
+        "@buildingai/dto": "workspace:*",
+        "@buildingai/errors": "workspace:*",
+        "@buildingai/extension-sdk": "workspace:*",
+        "@buildingai/hooks": "workspace:*",
+        "@buildingai/http": "workspace:*",
+        "@buildingai/i18n": "workspace:*",
+        "@buildingai/pipe": "workspace:*",
+        "@buildingai/services": "workspace:*",
+        "@buildingai/stores": "workspace:*",
+        "@buildingai/ui": "workspace:*",
+        "@buildingai/utils": "workspace:*",
+        "@buildingai/web-core": "workspace:*",
+        "lucide-react": "catalog:web",
+        "react": "catalog:web",
+        "react-dom": "catalog:web",
+        "react-router-dom": "catalog:web",
+        "vite-tsconfig-paths": "catalog:web"
+    },
+    "devDependencies": {
+        "@buildingai/eslint-config": "workspace:*",
+        "@buildingai/typescript-config": "workspace:*",
+        "@buildingai/web-types": "workspace:*",
+        "@types/react": "catalog:web",
+        "@types/react-dom": "catalog:web",
+        "eslint-plugin-react-refresh": "^0.4.26"
+    },
+    "engine": {
+        "buildingai": ">=25.1.0"
+    }
+}

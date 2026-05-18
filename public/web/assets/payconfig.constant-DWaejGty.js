@@ -1,0 +1,1 @@
+var e={WECHAT:1,ALIPAY:2},t={ORDINARY:`ordinary`,CHILD:`child`},n={V2:`V2`,V3:`V3`};export{e as n,n as r,t};

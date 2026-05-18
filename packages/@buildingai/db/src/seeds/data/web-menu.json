@@ -1,0 +1,91 @@
+{
+    "menus": [
+        {
+            "id": "menu_home_fixed",
+            "icon": "square-pen",
+            "title": "新对话",
+            "link": {
+                "label": "新对话",
+                "path": "/",
+                "type": "system",
+                "query": {},
+                "component": "/src/pages/chat/index.tsx",
+                "target": "_self"
+            }
+        },
+        {
+            "id": "menu_app-center",
+            "icon": "layout-grid",
+            "title": "应用",
+            "link": {
+                "label": "应用",
+                "path": "/apps",
+                "type": "system",
+                "query": {},
+                "component": "/src/pages/apps/index.tsx",
+                "target": "_self"
+            }
+        },
+        {
+            "id": "menu_agent-center",
+            "icon": "bot",
+            "title": "智能体",
+            "link": {
+                "label": "智能体",
+                "path": "/agents",
+                "type": "system",
+                "query": {},
+                "component": "/src/pages/agents/index.tsx",
+                "target": "_self"
+            }
+        },
+        {
+            "id": "menu_datasets",
+            "icon": "book-search",
+            "title": "知识库",
+            "link": {
+                "label": "知识库",
+                "path": "/datasets",
+                "type": "system",
+                "query": {},
+                "component": "/src/pages/datasets/index.tsx",
+                "target": "_self"
+            }
+        },
+        {
+            "id": "menu_history_fixed",
+            "icon": "folder-clock",
+            "title": "历史记录",
+            "link": {
+                "label": "历史记录",
+                "path": "",
+                "type": "button",
+                "query": {},
+                "component": null,
+                "target": "_self"
+            }
+        }
+    ],
+    "groups": [
+        {
+            "id": "group_default_apps",
+            "title": "应用",
+            "items": [
+                {
+                    "id": "menu_group_extension_demo",
+                    "icon": "puzzle",
+                    "title": "Blog",
+                    "link": {
+                        "label": "Blog",
+                        "path": "/apps/simple-blog",
+                        "type": "extension",
+                        "query": {},
+                        "component": null,
+                        "target": "_self"
+                    }
+                }
+            ]
+        }
+    ],
+    "layout": "default"
+}

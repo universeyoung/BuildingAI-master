@@ -1,0 +1,445 @@
+import { MODEL_TYPE_DESCRIPTIONS, type ModelType } from "@buildingai/ai-sdk/interfaces";
+import {
+  type AiProvider,
+  type CreateAiProviderDto,
+  useAllSecretTemplatesQuery,
+  useCreateAiProviderMutation,
+  useUpdateAiProviderMutation,
+} from "@buildingai/services/console";
+import { Button } from "@buildingai/ui/components/ui/button";
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+  useComboboxAnchor,
+} from "@buildingai/ui/components/ui/combobox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@buildingai/ui/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@buildingai/ui/components/ui/form";
+import { ImageUpload } from "@buildingai/ui/components/ui/image-upload";
+import { Input } from "@buildingai/ui/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@buildingai/ui/components/ui/radio-group";
+import { ScrollArea } from "@buildingai/ui/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@buildingai/ui/components/ui/select";
+import { Textarea } from "@buildingai/ui/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FolderKey, Loader2 } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const MODEL_TYPES = Object.keys(MODEL_TYPE_DESCRIPTIONS) as ModelType[];
+
+const formSchema = z.object({
+  provider: z
+    .string({ message: "供应商标识参数必须传递" })
+    .min(1, "供应商标识不能为空")
+    .max(50, "供应商标识不能超过50个字符"),
+  name: z
+    .string({ message: "供应商名称参数必须传递" })
+    .min(1, "供应商名称不能为空")
+    .max(100, "供应商名称不能超过100个字符"),
+  description: z.string().max(1000, "供应商描述不能超过1000个字符").optional(),
+  bindSecretId: z.string({ message: "绑定的密钥配置必须选择" }).min(1, "请绑定一个密钥"),
+  supportedModelTypes: z.array(z.string()).min(1, "至少选择一种类型").optional(),
+  iconUrl: z.string().optional(),
+  isActive: z.boolean().optional(),
+  sortOrder: z.number().min(0, "排序权重不能小于0").optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+type AiProviderFormDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  openSecretManageDialog: () => void;
+  provider?: AiProvider | null;
+  onSuccess?: () => void;
+};
+
+/**
+ * AI Provider form dialog component for creating and updating providers
+ */
+export const AiProviderFormDialog = ({
+  open,
+  onOpenChange,
+  openSecretManageDialog,
+  provider,
+  onSuccess,
+}: AiProviderFormDialogProps) => {
+  const isEditMode = !!provider;
+
+  const { data: secretTemplates } = useAllSecretTemplatesQuery();
+
+  const secrets = useMemo(() => {
+    if (!secretTemplates) return [];
+    return secretTemplates.flatMap((template) =>
+      (template.Secrets || []).map((secret) => ({
+        id: secret.id,
+        name: secret.name,
+        templateName: template.name,
+      })),
+    );
+  }, [secretTemplates]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema as any),
+    defaultValues: {
+      provider: "",
+      name: "",
+      description: "",
+      bindSecretId: "",
+      supportedModelTypes: [],
+      iconUrl: "",
+      isActive: false,
+      sortOrder: 0,
+    },
+  });
+
+  const bindSecretId = form.watch("bindSecretId");
+  const canEnable = isEditMode || !!bindSecretId;
+
+  useEffect(() => {
+    if (!isEditMode && !bindSecretId) {
+      form.setValue("isActive", false);
+    }
+  }, [isEditMode, bindSecretId, form]);
+
+  useEffect(() => {
+    if (open) {
+      if (provider) {
+        form.reset({
+          provider: provider.provider,
+          name: provider.name,
+          description: provider.description || "",
+          bindSecretId: provider.bindSecretId || "",
+          supportedModelTypes: provider.supportedModelTypes || [],
+          iconUrl: provider.iconUrl || "",
+          isActive: provider.isActive,
+          sortOrder: provider.sortOrder,
+        });
+      } else {
+        form.reset({
+          provider: "",
+          name: "",
+          description: "",
+          bindSecretId: "",
+          supportedModelTypes: [],
+          iconUrl: "",
+          isActive: false,
+          sortOrder: 0,
+        });
+      }
+    }
+  }, [open, provider, form]);
+
+  const createMutation = useCreateAiProviderMutation({
+    onSuccess: () => {
+      toast.success("供应商创建成功");
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(`创建失败: ${error.message}`);
+    },
+  });
+
+  const updateMutation = useUpdateAiProviderMutation({
+    onSuccess: () => {
+      toast.success("供应商更新成功");
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(`更新失败: ${error.message}`);
+    },
+  });
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const handleSubmit = (values: FormValues) => {
+    const dto: CreateAiProviderDto = {
+      provider: values.provider,
+      name: values.name,
+      description: values.description || undefined,
+      bindSecretId: values.bindSecretId,
+      supportedModelTypes: (values.supportedModelTypes || []).map((t) =>
+        t.toLowerCase(),
+      ) as ModelType[],
+      iconUrl: values.iconUrl || undefined,
+      isActive: values.isActive,
+      sortOrder: values.sortOrder,
+    };
+
+    if (isEditMode && provider) {
+      updateMutation.mutate({ id: provider.id, dto });
+    } else {
+      createMutation.mutate(dto);
+    }
+  };
+
+  const modelTypeAnchor = useComboboxAnchor();
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent ref={setContainer} className="gap-0 p-0 sm:max-w-lg">
+        <DialogHeader className="p-4">
+          <DialogTitle>{isEditMode ? "编辑供应商" : "新增供应商"}</DialogTitle>
+          <DialogDescription>
+            {isEditMode ? "修改AI供应商的配置信息" : "添加一个新的AI模型供应商"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-[80vh]">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 p-4 pt-0 pb-17">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="iconUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>图标</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value}
+                          onChange={(url) => field.onChange(url ?? "")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel required>启用状态</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          className="flex gap-4"
+                          value={field.value ? "true" : "false"}
+                          onValueChange={(v) => field.onChange(v === "true")}
+                        >
+                          <label className="flex items-center gap-2 text-sm">
+                            <RadioGroupItem value="true" disabled={!canEnable} />
+                            启用
+                          </label>
+                          <label className="flex items-center gap-2 text-sm">
+                            <RadioGroupItem value="false" />
+                            禁用
+                          </label>
+                        </RadioGroup>
+                      </FormControl>
+                      {!isEditMode && !bindSecretId && (
+                        <FormDescription className="text-xs">
+                          请先选择密钥配置才能启用供应商
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="provider"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>供应商标识</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="例如: openai, deepseek, doubao"
+                        {...field}
+                        disabled={isEditMode}
+                      />
+                    </FormControl>
+                    <FormDescription>唯一标识符，创建后不可修改</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>供应商名称</FormLabel>
+                    <FormControl>
+                      <Input placeholder="例如: OpenAI, DeepSeek, 字节豆包" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>描述</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="供应商描述信息（可选）"
+                        className="resize-none"
+                        rows={2}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bindSecretId"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel required>绑定密钥</FormLabel>
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        onClick={openSecretManageDialog}
+                        type="button"
+                      >
+                        <FolderKey />
+                        管理密钥
+                      </Button>
+                    </div>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="选择密钥配置" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {secrets.map((secret) => (
+                          <SelectItem key={secret.id} value={secret.id}>
+                            {secret.name}
+                            <span className="text-muted-foreground ml-2 text-xs">
+                              ({secret.templateName})
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="supportedModelTypes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>支持的模型类型</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        multiple
+                        autoHighlight
+                        items={MODEL_TYPES}
+                        value={field.value || []}
+                        onValueChange={field.onChange}
+                      >
+                        <ComboboxChips ref={modelTypeAnchor} className="min-h-9 w-full">
+                          <ComboboxValue>
+                            {(values: string[]) => (
+                              <React.Fragment>
+                                {values.map((value: string) => (
+                                  <ComboboxChip key={value}>
+                                    {MODEL_TYPE_DESCRIPTIONS[value as ModelType]?.nameEn || value}
+                                  </ComboboxChip>
+                                ))}
+                                <ComboboxChipsInput placeholder="选择模型类型..." />
+                              </React.Fragment>
+                            )}
+                          </ComboboxValue>
+                        </ComboboxChips>
+                        <ComboboxContent anchor={modelTypeAnchor} container={container}>
+                          <ComboboxEmpty>未找到匹配的类型</ComboboxEmpty>
+                          <ComboboxList>
+                            {(item: string) => (
+                              <ComboboxItem key={item} value={item}>
+                                {MODEL_TYPE_DESCRIPTIONS[item as ModelType]?.nameEn || item}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sortOrder"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>排序权重</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="bg-background absolute bottom-0 left-0 w-full flex-row justify-end rounded-lg p-4">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  取消
+                </Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending && <Loader2 className="animate-spin" />}
+                  {isEditMode ? "保存" : "创建"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+};

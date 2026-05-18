@@ -1,0 +1,83 @@
+{
+    "name": "@buildingai/ai-sdk",
+    "version": "0.0.0",
+    "private": true,
+    "license": "MIT",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "files": [
+        "dist/**/*"
+    ],
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./providers": {
+            "require": "./dist/providers/index.js",
+            "import": "./dist/providers/index.js",
+            "types": "./dist/providers/index.d.ts"
+        },
+        "./utils/token-usage": {
+            "require": "./dist/utils/token-usage.js",
+            "import": "./dist/utils/token-usage.js",
+            "types": "./dist/utils/token-usage.d.ts"
+        },
+        "./utils/text-with-usage": {
+            "require": "./dist/utils/text-with-usage.js",
+            "import": "./dist/utils/text-with-usage.js",
+            "types": "./dist/utils/text-with-usage.d.ts"
+        },
+        "./interfaces": {
+            "import": "./src/interfaces/index.ts",
+            "require": "./src/interfaces/index.ts",
+            "types": "./dist/interfaces/index.d.ts"
+        },
+        "./config/audio": {
+            "import": "./src/config/audio/index.ts",
+            "require": "./src/config/audio/index.ts",
+            "types": "./src/config/audio/index.d.ts"
+        }
+    },
+    "scripts": {
+        "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('.turbo',{recursive:true,force:true});try{require('fs').rmSync('dist/build.tsbuildinfo',{force:true})}catch(e){}\"",
+        "check-types": "tsc --noEmit",
+        "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json",
+        "dev": "tsc -p tsconfig.build.json --watch",
+        "format": "biome format --write .",
+        "format:check": "biome ci .",
+        "lint": "eslint . --quiet",
+        "lint:fix": "eslint . --fix",
+        "watch": "tsc -p tsconfig.build.json --watch",
+        "test": "jest",
+        "test:dev": "jest --watch"
+    },
+    "dependencies": {
+        "@ai-sdk/anthropic": "^3.0.36",
+        "@ai-sdk/azure": "^3.0.26",
+        "@ai-sdk/cohere": "^3.0.18",
+        "@ai-sdk/deepseek": "^2.0.17",
+        "@ai-sdk/google": "^3.0.21",
+        "@ai-sdk/mcp": "^1.0.18",
+        "@ai-sdk/openai": "^3.0.25",
+        "@ai-sdk/openai-compatible": "^2.0.27",
+        "@ai-sdk/provider": "^3.0.7",
+        "@ai-sdk/provider-utils": "^4.0.13",
+        "@ai-sdk/xai": "^3.0.47",
+        "@buildingai/constants": "workspace:*",
+        "@buildingai/utils": "workspace:*",
+        "@modelcontextprotocol/sdk": "1.21.0",
+        "@openrouter/ai-sdk-provider": "^2.1.1",
+        "ai-sdk-ollama": "^3.4.0",
+        "tiktoken": "^1.0.22",
+        "vercel-minimax-ai-provider": "^0.0.1",
+        "zhipu-ai-provider": "^0.2.2"
+    },
+    "devDependencies": {
+        "@buildingai/eslint-config": "workspace:*",
+        "@buildingai/typescript-config": "workspace:*",
+        "typescript": "catalog:dev"
+    }
+}

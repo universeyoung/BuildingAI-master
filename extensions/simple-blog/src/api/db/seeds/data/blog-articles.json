@@ -1,0 +1,11 @@
+[
+    {
+        "title": "欢迎使用 Simple Blog",
+        "summary": "这是您的第一篇博客文章，欢迎来到 Simple Blog 的世界！",
+        "content": "# 欢迎使用 Simple Blog\n\n这是您的第一篇博客文章。Simple Blog 是一个简单而强大的博客系统，帮助您轻松管理和发布内容。\n\n## 主要功能\n\n- 📝 文章管理\n- 📂 分类管理\n- 🎨 美观的界面\n- 📱 响应式设计\n\n开始创建您的内容吧！",
+        "status": "published",
+        "categoryName": "生活随笔",
+        "sort": 10,
+        "viewCount": 0
+    }
+]

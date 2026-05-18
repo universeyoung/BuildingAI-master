@@ -1,0 +1,147 @@
+import type {
+    SpeechCatalog,
+    SpeechTranscriptionModelConfig,
+    SpeechTtsModelConfig,
+    SpeechVoiceOption,
+} from "../../types/speech";
+
+const TONGYI_TTS_LANGUAGES = [
+    "zh-Hans",
+    "en-US",
+    "fr-FR",
+    "de-DE",
+    "ru-RU",
+    "it-IT",
+    "es-ES",
+    "pt-PT",
+    "ja-JP",
+    "ko-KR",
+];
+
+const TONGYI_TTS_VOICES: SpeechVoiceOption[] = [
+    { id: "Cherry", name: "芊悦（阳光积极、亲切自然）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Serena", name: "苏瑶（温柔女声）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Ethan", name: "晨煦（阳光温暖、活力朝气）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Chelsie", name: "千雪（二次元虚拟女友）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Momo", name: "茉兔（撒娇搞怪）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Vivian", name: "十三（拽拽的、可爱小暴躁）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Moon", name: "月白（率性帅气）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Maia", name: "四月（知性与温柔）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Kai", name: "凯（耳朵的一场SPA）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Nofish", name: "不吃鱼（不会翘舌音的设计师）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Bella", name: "萌宝（小萝莉）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Jennifer", name: "詹妮弗（电影质感美语女声）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Ryan", name: "甜茶（节奏拉满、戏感炸裂）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Katerina", name: "卡捷琳娜（御姐音色）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Aiden", name: "艾登（精通厨艺的美语大男孩）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Eldric Sage", name: "沧明子（沉稳睿智老者）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Mia", name: "乖小妹（温顺乖巧）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Mochi", name: "沙小弥（聪明伶俐小大人）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Bellona", name: "燕铮莺（声音洪亮、字正腔圆）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Vincent", name: "田叔（沙哑烟嗓）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Bunny", name: "萌小姬（萌属性小萝莉）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Neil", name: "阿闻（专业新闻主持人）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Elias", name: "墨讲师（学科严谨、叙事清晰）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Arthur", name: "徐大爷（质朴嗓音）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Nini", name: "邻家妹妹（又软又黏）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Ebona", name: "诡婆婆（低语幽暗）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Seren", name: "小婉（温和舒缓、助眠）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Pip", name: "顽屁小孩（调皮童真）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Stella", name: "少女阿月（甜腻迷糊/正义）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Bodega", name: "博德加（热情西班牙大叔）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Sonrisa", name: "索尼莎（热情拉美大姐）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Alek", name: "阿列克（战斗民族）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Dolce", name: "多尔切（慵懒意大利大叔）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Sohee", name: "素熙（温柔韩国欧尼）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Ono Anna", name: "小野杏（鬼灵精怪青梅竹马）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Lenn", name: "莱恩（理性德国青年）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Emilien", name: "埃米尔安（浪漫法国大哥哥）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Andre", name: "安德雷（磁性沉稳男声）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Radio Gol", name: "拉迪奥·戈尔（足球解说）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Jada", name: "上海-阿珍（沪上阿姐）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Dylan", name: "北京-晓东（胡同少年）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Li", name: "南京-老李（瑜伽老师）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Marcus", name: "陕西-秦川（老陕）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Roy", name: "闽南-阿杰（台湾哥仔）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Peter", name: "天津-李彼得（相声捧哏）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Sunny", name: "四川-晴儿（川妹子）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Eric", name: "四川-程川（成都男子）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Rocky", name: "粤语-阿强（幽默陪聊）", languages: TONGYI_TTS_LANGUAGES },
+    { id: "Kiki", name: "粤语-阿清（港妹闺蜜）", languages: TONGYI_TTS_LANGUAGES },
+];
+
+const createTtsModel = (modelId: string, label: string): SpeechTtsModelConfig => ({
+    modelId,
+    label,
+    defaultVoiceId: "Cherry",
+    voices: TONGYI_TTS_VOICES,
+    supportedLanguages: TONGYI_TTS_LANGUAGES,
+    outputFormats: ["wav"],
+    defaultOutputFormat: "wav",
+    speedRange: [0.5, 2],
+    defaultSpeed: 1,
+    maxInputLength: 5000,
+});
+
+const TONGYI_TTS_MODELS: SpeechTtsModelConfig[] = [
+    createTtsModel("qwen3-tts-instruct-flash", "千问3-TTS-Instruct-Flash（稳定版）"),
+    createTtsModel(
+        "qwen3-tts-instruct-flash-2026-01-26",
+        "千问3-TTS-Instruct-Flash（快照 2026-01-26）",
+    ),
+    createTtsModel("qwen3-tts-vd-2026-01-26", "千问3-TTS-VD（声音设计）"),
+    createTtsModel("qwen3-tts-vc-2026-01-22", "千问3-TTS-VC（声音复刻）"),
+    createTtsModel("qwen3-tts-flash", "千问3-TTS-Flash（稳定版）"),
+    createTtsModel("qwen3-tts-flash-2025-11-27", "千问3-TTS-Flash（快照 2025-11-27）"),
+    createTtsModel("qwen3-tts-flash-2025-09-18", "千问3-TTS-Flash（快照 2025-09-18）"),
+    createTtsModel("qwen-tts", "千问-TTS（稳定版）"),
+    createTtsModel("qwen-tts-latest", "千问-TTS（最新版）"),
+    createTtsModel("qwen-tts-2025-05-22", "千问-TTS（快照 2025-05-22）"),
+    createTtsModel("qwen-tts-2025-04-10", "千问-TTS（快照 2025-04-10）"),
+];
+
+const TONGYI_STT_EXTENSIONS = [
+    "aac",
+    "amr",
+    "avi",
+    "flac",
+    "flv",
+    "m4a",
+    "mkv",
+    "mov",
+    "mp3",
+    "mp4",
+    "mpeg",
+    "ogg",
+    "opus",
+    "wav",
+    "webm",
+    "wma",
+    "wmv",
+];
+
+const TONGYI_TRANSCRIPTION_MODELS: SpeechTranscriptionModelConfig[] = [
+    {
+        modelId: "paraformer-realtime-v1",
+        label: "paraformer-realtime-v1",
+        supportedFileExtensions: TONGYI_STT_EXTENSIONS,
+        maxFileSizeMb: 100,
+    },
+    {
+        modelId: "paraformer-realtime-v2",
+        label: "paraformer-realtime-v2",
+        supportedFileExtensions: TONGYI_STT_EXTENSIONS,
+        maxFileSizeMb: 100,
+    },
+];
+
+export const tongyiSpeechConfig: SpeechCatalog = {
+    providerId: "tongyi",
+    providerName: "通义千问",
+    tts: {
+        models: TONGYI_TTS_MODELS,
+    },
+    transcription: {
+        models: TONGYI_TRANSCRIPTION_MODELS,
+    },
+};
