@@ -158,11 +158,13 @@ export class WebAiMcpServerWebService extends BaseService<AiMcpServer> {
         // Iterate through all MCP server configurations
         for (const [name, config] of Object.entries(mcpServers)) {
             try {
-                // Use the full URL directly
-                const url = config.url;
-
                 // Communication type
-                const communicationType = config.type;
+                let communicationType = config.type || McpCommunicationType.SSE;
+
+                // Determine communication type based on config
+                if (config.command) {
+                    communicationType = McpCommunicationType.STDIO;
+                }
 
                 // Check if a server with the same name already exists
                 const existServer = await this.findOne({
@@ -181,9 +183,11 @@ export class WebAiMcpServerWebService extends BaseService<AiMcpServer> {
                         name,
                         communicationType,
                         type: McpServerType.USER,
-                        url,
+                        url: config.url,
                         creatorId,
                         headers: config.headers || {},
+                        args: config.args,
+                        env: config.env,
                         description: `MCP server imported from JSON: ${name}`,
                         icon: "",
                         sortOrder: 0,

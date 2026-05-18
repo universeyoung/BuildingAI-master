@@ -136,7 +136,7 @@ export class CreateAiMcpServerDto {
     @IsOptional()
     @IsArray({ message: "命令参数必须是数组" })
     @IsString({ each: true, message: "每个命令参数必须是字符串" })
-    args?: string[];
+    args?: Array<string>;
 
     /**
      * 环境变量（仅 stdio 传输使用）
@@ -192,21 +192,43 @@ export class BatchDeleteAiMcpServerDto {
  */
 export class McpServerUrlConfig {
     /**
-     * 服务URL
+     * 服务URL（非stdio类型使用）
      */
-    @IsNotEmpty({ message: "服务URL不能为空" })
+    @IsOptional()
     @IsString({ message: "服务URL必须是字符串" })
-    url: string;
+    url?: string;
+
+    /**
+     * 命令（stdio类型使用）
+     */
+    @IsOptional()
+    @IsString({ message: "命令必须是字符串" })
+    command?: string;
+
+    /**
+     * 命令参数（stdio类型使用）
+     */
+    @IsOptional()
+    @IsArray({ message: "命令参数必须是数组" })
+    @IsString({ each: true, message: "每个命令参数必须是字符串" })
+    args?: Array<string>;
+
+    /**
+     * 环境变量（stdio类型使用）
+     */
+    @IsOptional()
+    @IsObject({ message: "环境变量必须是对象" })
+    env?: Record<string, string>;
 
     /**
      * 通信类型
      */
     @IsOptional()
-    @IsEnum(McpCommunicationType, { message: "通信类型必须是 sse 或 streamable-http" })
+    @IsEnum(McpCommunicationType, { message: "通信类型必须是 sse、streamable-http 或 stdio" })
     type?: McpCommunicationType;
 
     /**
-     * 请求头
+     * 请求头（非stdio类型使用）
      */
     @IsOptional()
     @IsObject({ message: "请求头必须是对象" })

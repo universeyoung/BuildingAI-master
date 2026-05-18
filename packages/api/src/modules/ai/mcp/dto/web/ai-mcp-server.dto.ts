@@ -4,6 +4,7 @@ import { isEnabled } from "@buildingai/utils";
 import { PartialType } from "@nestjs/mapped-types";
 import { Transform, Type } from "class-transformer";
 import {
+    IsArray,
     IsBoolean,
     IsEnum,
     IsNotEmpty,
@@ -165,33 +166,47 @@ export class McpServersConfig {
  */
 export class WebMcpServerUrlConfig {
     /**
-     * 服务URL（SSE/HTTP）或命令（stdio）
+     * 服务URL（非stdio类型使用）
      */
-    @IsNotEmpty({ message: "服务URL不能为空" })
+    @IsOptional()
     @IsString({ message: "服务URL必须是字符串" })
-    url: string;
+    url?: string;
 
     /**
-     * 请求头
+     * 命令（stdio类型使用）
+     */
+    @IsOptional()
+    @IsString({ message: "命令必须是字符串" })
+    command?: string;
+
+    /**
+     * 命令参数（stdio类型使用）
+     */
+    @IsOptional()
+    @IsArray({ message: "命令参数必须是数组" })
+    @IsString({ each: true, message: "每个命令参数必须是字符串" })
+    args?: Array<string>;
+
+    /**
+     * 环境变量（stdio类型使用）
+     */
+    @IsOptional()
+    @IsObject({ message: "环境变量必须是对象" })
+    env?: Record<string, string>;
+
+    /**
+     * 请求头（非stdio类型使用）
      */
     @IsOptional()
     @IsObject({ message: "请求头必须是对象" })
     headers?: Record<string, string>;
 
     /**
-     * 命令参数（仅 stdio 传输使用）
-     */
-    @IsOptional()
-    @IsArray({ message: "命令参数必须是数组" })
-    @IsString({ each: true, message: "每个命令参数必须是字符串" })
-    args?: string[];
-
-    /**
      * 通信传输方式
      */
-    @IsNotEmpty({ message: "通信传输方式" })
+    @IsOptional()
     @IsString({ message: "通信传输方式必须是字符串" })
-    type: McpCommunicationType;
+    type?: McpCommunicationType;
 }
 
 /**

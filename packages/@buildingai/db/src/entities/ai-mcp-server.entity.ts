@@ -121,7 +121,17 @@ export class AiMcpServer extends BaseEntity {
         nullable: true,
         comment: "命令参数（仅 stdio 传输使用）",
     })
-    args?: string[];
+    args?: Array<string>;
+
+    /**
+     * 环境变量（仅 stdio 传输使用）
+     */
+    @Column({
+        type: "jsonb",
+        nullable: true,
+        comment: "环境变量（仅 stdio 传输使用）",
+    })
+    env?: Record<string, string>;
 
     /**
      * 供应商图标
