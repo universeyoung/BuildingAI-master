@@ -51,6 +51,7 @@ import { AiMcpServerService } from "../../mcp/services/ai-mcp-server.service";
 import { MemoryService } from "../../memory/services/memory.service";
 import { MemoryExtractionService } from "../../memory/services/memory-extraction.service";
 import { AiModelService } from "../../model/services/ai-model.service";
+import { AiSkillToolService } from "../../skill/services/ai-skill-tool.service";
 import { AgentBillingHandler } from "../handlers/agent-billing";
 import { AnnotationReplyHandler } from "../handlers/annotation-reply";
 import { FollowUpSuggestionsHandler } from "../handlers/follow-up-suggestions";
@@ -136,6 +137,7 @@ export class AgentChatCompletionService {
         private readonly cozeChatProvider: CozeChatProvider,
         private readonly difyChatProvider: DifyChatProvider,
         private readonly userService: UserService,
+        private readonly aiSkillToolService: AiSkillToolService,
     ) {}
 
     async streamChat(params: AgentChatCompletionParams, response: ServerResponse): Promise<void> {
@@ -723,7 +725,10 @@ export class AgentChatCompletionService {
         documentContents?: Array<{ filename: string; content: string }>,
         planningContext?: PlanningContext,
     ): Record<string, Tool> {
-        const tools: Record<string, Tool> = { ...mcpTools };
+        const tools: Record<string, Tool> = {
+            ...mcpTools,
+            ...this.aiSkillToolService.getSkillTools(),
+        };
 
         tools.getWeather = getWeather;
 

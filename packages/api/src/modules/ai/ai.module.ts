@@ -5,6 +5,7 @@ import { AiMcpModule } from "@modules/ai/mcp/ai-mcp.module";
 import { AiMemoryModule } from "@modules/ai/memory/ai-memory.module";
 import { AiModelModule } from "@modules/ai/model/ai-model.module";
 import { AiProviderModule } from "@modules/ai/provider/ai-provider.module";
+import { AiSkillModule } from "@modules/ai/skill/ai-skill.module";
 import { SecretManagerModule } from "@modules/ai/secret/secret.module";
 import { Module } from "@nestjs/common";
 
@@ -17,6 +18,7 @@ import { Module } from "@nestjs/common";
         AiMemoryModule,
         AiModelModule,
         AiProviderModule,
+        AiSkillModule,
         SecretManagerModule,
     ],
     controllers: [],
@@ -29,6 +31,7 @@ import { Module } from "@nestjs/common";
         AiMemoryModule,
         AiModelModule,
         AiProviderModule,
+        AiSkillModule,
         SecretManagerModule,
     ],
 })

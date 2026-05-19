@@ -57,6 +57,7 @@ import { AiMcpServerService } from "../../mcp/services/ai-mcp-server.service";
 import { MemoryService } from "../../memory/services/memory.service";
 import { MemoryExtractionService } from "../../memory/services/memory-extraction.service";
 import { AiModelService } from "../../model/services/ai-model.service";
+import { AiSkillToolService } from "../../skill/services/ai-skill-tool.service";
 import { ChatBillingHandler } from "../handlers/chat-billing.handler";
 import { ChatTitleHandler } from "../handlers/chat-title.handler";
 import type { ChatCompletionParams, UIMessage } from "../types/chat.types";
@@ -95,6 +96,7 @@ export class ChatCompletionService {
         private readonly chatConfigService: ChatConfigService,
         private readonly userService: UserService,
         private readonly followUpSuggestionsHandler: FollowUpSuggestionsHandler,
+        private readonly aiSkillToolService: AiSkillToolService,
     ) {}
 
     private getErrorMsg(error: unknown): string {
@@ -920,6 +922,7 @@ export class ChatCompletionService {
         const tools: Record<string, Tool> = {
             getWeather,
             ...mcpTools,
+            ...this.aiSkillToolService.getSkillTools(),
         };
 
         if (documentContents?.length) {
