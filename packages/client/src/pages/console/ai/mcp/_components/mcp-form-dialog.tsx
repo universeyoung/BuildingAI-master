@@ -61,7 +61,7 @@ const formSchema = z.object({
     .max(100, "服务名称不能超过100个字符"),
   alias: z.string().max(100, "别名不能超过100个字符").optional(),
   description: z.string().max(1000, "描述不能超过1000个字符").optional(),
-  url: z.string({ message: "服务地址必须填写" }).min(1, "服务地址不能为空"),
+  url: z.string().optional(),
   icon: z.string().optional(),
   type: z.enum(McpServerType).optional(),
   communicationType: z.enum(McpCommunicationType).optional(),
@@ -104,6 +104,10 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
       env: "",
     },
   });
+
+  const { watch } = form;
+  const currentCommunicationType = watch("communicationType") || McpCommunicationType.SSE;
+  const isStdioMode = currentCommunicationType === McpCommunicationType.STDIO;
 
   useEffect(() => {
     if (open) {
@@ -388,65 +392,71 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="headers"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>请求头</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder='{"Authorization": "Bearer xxx"}'
-                        className="font-mono text-xs"
-                        rows={3}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>JSON格式的HTTP请求头（SSE/HTTP模式）</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!isStdioMode && (
+                <FormField
+                  control={form.control}
+                  name="headers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>请求头</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder='{"Authorization": "Bearer xxx"}'
+                          className="font-mono text-xs"
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>JSON格式的HTTP请求头（SSE/HTTP模式）</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-              <FormField
-                control={form.control}
-                name="args"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>命令参数</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder='["--arg1", "--arg2"]'
-                        className="font-mono text-xs"
-                        rows={2}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>JSON数组格式的命令参数（Stdio模式）</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {isStdioMode && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="args"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>命令参数</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder='["--arg1", "--arg2"]'
+                            className="font-mono text-xs"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>JSON数组格式的命令参数（Stdio模式）</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="env"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>环境变量</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder='{"KEY": "value"}'
-                        className="font-mono text-xs"
-                        rows={2}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>JSON格式的环境变量（Stdio模式）</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="env"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>环境变量</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder='{"KEY": "value"}'
+                            className="font-mono text-xs"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>JSON格式的环境变量（Stdio模式）</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               <FormField
                 control={form.control}

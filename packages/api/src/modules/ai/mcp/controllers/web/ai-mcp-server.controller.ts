@@ -286,6 +286,18 @@ export class WebAiMcpServerWebController {
                 type: "object",
                 properties: {
                     url: { type: "string", minLength: 1 },
+                    command: { type: "string", minLength: 1 },
+                    args: {
+                        type: "array",
+                        items: { type: "string" },
+                    },
+                    env: {
+                        type: "object",
+                        patternProperties: {
+                            "^.*$": { type: "string" },
+                        },
+                        additionalProperties: false,
+                    },
                     type: {
                         type: "string",
                         enum: Object.values(McpCommunicationType),
@@ -305,7 +317,10 @@ export class WebAiMcpServerWebController {
                         additionalProperties: false,
                     },
                 },
-                required: ["url"],
+                anyOf: [
+                    { required: ["url"] },
+                    { required: ["command"] },
+                ],
                 additionalProperties: false,
             };
 

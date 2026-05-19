@@ -81,7 +81,10 @@ export type BatchDeleteAiMcpServerDto = {
 };
 
 export type McpServerUrlConfig = {
-    url: string;
+    url?: string;
+    command?: string;
+    args?: string[];
+    env?: Record<string, string>;
     type?: McpCommunicationType;
     headers?: Record<string, string>;
 };

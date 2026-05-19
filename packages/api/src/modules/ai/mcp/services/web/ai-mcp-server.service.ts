@@ -162,7 +162,8 @@ export class WebAiMcpServerWebService extends BaseService<AiMcpServer> {
                 let communicationType = config.type || McpCommunicationType.SSE;
 
                 // Determine communication type based on config
-                if (config.command) {
+                const isStdio = !!config.command;
+                if (isStdio) {
                     communicationType = McpCommunicationType.STDIO;
                 }
 
@@ -178,12 +179,15 @@ export class WebAiMcpServerWebService extends BaseService<AiMcpServer> {
                         error: `MCP server with name "${name}" already exists`,
                     });
                 } else {
+                    // For stdio type, command is stored in url field
+                    const serverUrl = isStdio ? config.command : config.url;
+
                     // If not exists, create new server
                     const mcpServer = await this.create({
                         name,
                         communicationType,
                         type: McpServerType.USER,
-                        url: config.url,
+                        url: serverUrl,
                         creatorId,
                         headers: config.headers || {},
                         args: config.args,

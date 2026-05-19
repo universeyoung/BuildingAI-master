@@ -527,6 +527,8 @@ export class ChatCompletionService {
                     url: server.url,
                     communicationType: server.communicationType,
                     headers: server.headers ?? undefined,
+                    args: server.args ?? undefined,
+                    env: server.env ?? undefined,
                 }));
 
             if (!serverConfigs.length) {

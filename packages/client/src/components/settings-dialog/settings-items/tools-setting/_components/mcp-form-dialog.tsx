@@ -56,7 +56,7 @@ const formSchema = z.object({
     .max(100, "服务名称不能超过100个字符"),
   alias: z.string().max(100, "别名不能超过100个字符").optional(),
   description: z.string().max(1000, "描述不能超过1000个字符").optional(),
-  url: z.string({ message: "服务地址必须填写" }).min(1, "服务地址不能为空"),
+  url: z.string().optional(),
   icon: z.string().optional(),
   communicationType: z.enum(["sse", "streamable-http", "stdio"]).optional(),
   isDisabled: z.boolean().optional(),
@@ -92,6 +92,10 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
       env: "",
     },
   });
+
+  const { watch } = form;
+  const currentCommunicationType = watch("communicationType") || "sse";
+  const isStdioMode = currentCommunicationType === "stdio";
 
   useEffect(() => {
     if (open) {
@@ -162,7 +166,7 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
       }
     }
 
-    const params: CreateMcpServerParams = {
+    const dto: CreateMcpServerParams = {
       name: values.name,
       alias: values.alias || undefined,
       description: values.description || undefined,
@@ -176,31 +180,9 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
     };
 
     if (isEditMode && server) {
-      updateMutation.mutate(
-        { id: server.id, ...params },
-        {
-          onSuccess: () => {
-            toast.success("MCP服务更新成功");
-            onOpenChange(false);
-            onSuccess?.();
-          },
-          onError: (error) => {
-            toast.error(`更新失败: ${(error as Error).message}`);
-          },
-        },
-      );
+      updateMutation.mutate({ id: server.id, data: dto });
     } else {
-      createMutation.mutate(params, {
-        onSuccess: (data) => {
-          toast.success("MCP服务创建成功，正在检测连接...");
-          onOpenChange(false);
-          onSuccess?.();
-          checkConnectionMutation.mutate(data.id);
-        },
-        onError: (error) => {
-          toast.error(`创建失败: ${(error as Error).message}`);
-        },
-      });
+      createMutation.mutate(dto);
     }
   };
 
@@ -235,31 +217,6 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="communicationType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>通信类型</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="选择通信类型" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {COMMUNICATION_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField
@@ -267,7 +224,7 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>服务名称</FormLabel>
+                    <FormLabel required>服务名称</FormLabel>
                     <FormControl>
                       <Input placeholder="例如: GitHub MCP, Slack MCP" {...field} />
                     </FormControl>
@@ -281,11 +238,36 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
                 name="url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>服务地址/命令</FormLabel>
+                    <FormLabel required>服务地址/命令</FormLabel>
                     <FormControl>
                       <Input placeholder="例如: https://mcp.example.com/sse 或 python mcp_server.py" {...field} />
                     </FormControl>
                     <FormDescription>SSE/HTTP模式填写端点地址，Stdio模式填写命令路径</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="communicationType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel required>通信类型</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="选择通信类型" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {COMMUNICATION_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -324,65 +306,71 @@ export const McpFormDialog = ({ open, onOpenChange, server, onSuccess }: McpForm
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="headers"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>请求头</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder='{"Authorization": "Bearer xxx"}'
-                        className="font-mono text-xs"
-                        rows={3}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>JSON格式的HTTP请求头（SSE/HTTP模式）</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!isStdioMode && (
+                <FormField
+                  control={form.control}
+                  name="headers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>请求头</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder='{"Authorization": "Bearer xxx"}'
+                          className="font-mono text-xs"
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>JSON格式的HTTP请求头（SSE/HTTP模式）</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-              <FormField
-                control={form.control}
-                name="args"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>命令参数</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder='["--arg1", "--arg2"]'
-                        className="font-mono text-xs"
-                        rows={2}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>JSON数组格式的命令参数（Stdio模式）</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {isStdioMode && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="args"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>命令参数</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder='["--arg1", "--arg2"]'
+                            className="font-mono text-xs"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>JSON数组格式的命令参数（Stdio模式）</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="env"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>环境变量</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder='{"KEY": "value"}'
-                        className="font-mono text-xs"
-                        rows={2}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>JSON格式的环境变量（Stdio模式）</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="env"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>环境变量</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder='{"KEY": "value"}'
+                            className="font-mono text-xs"
+                            rows={2}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>JSON格式的环境变量（Stdio模式）</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               <FormField
                 control={form.control}

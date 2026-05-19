@@ -304,6 +304,18 @@ export class AiMcpServerConsoleController extends BaseController {
                 type: "object",
                 properties: {
                     url: { type: "string", minLength: 1 },
+                    command: { type: "string", minLength: 1 },
+                    args: {
+                        type: "array",
+                        items: { type: "string" },
+                    },
+                    env: {
+                        type: "object",
+                        patternProperties: {
+                            "^.*$": { type: "string" },
+                        },
+                        additionalProperties: false,
+                    },
                     type: {
                         type: "string",
                         enum: Object.values(McpCommunicationType),
@@ -316,7 +328,10 @@ export class AiMcpServerConsoleController extends BaseController {
                         additionalProperties: false,
                     },
                 },
-                required: ["url", "type"],
+                anyOf: [
+                    { required: ["url"] },
+                    { required: ["command"] },
+                ],
                 additionalProperties: false,
             };
 

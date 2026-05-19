@@ -884,6 +884,8 @@ export class AgentChatCompletionService {
                     url: s.url,
                     communicationType: s.communicationType,
                     headers: s.headers ?? undefined,
+                    args: s.args ?? undefined,
+                    env: s.env ?? undefined,
                 }));
 
             if (!serverConfigs.length) return { clients: [], tools: {} };
