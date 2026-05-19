@@ -1,0 +1,32 @@
+{
+  "name": "通用技能",
+  "description": "通用技能指南，包含日常任务处理的基本方法",
+  "type": "general",
+  "keywords": [
+    "技能",
+    "帮助",
+    "指南",
+    "任务",
+    "操作",
+    "通用技能",
+    "通用技能指南",
+    "可用技能",
+    "使用示例",
+    "搜索",
+    "搜索与前端开发相关的技能",
+    "获取详情",
+    "获取技能",
+    "前端开发"
+  ],
+  "intentPatterns": [
+    "如何.*",
+    "怎么.*",
+    "如何做.*",
+    "怎样.*"
+  ],
+  "priority": "medium",
+  "enforcement": "suggest",
+  "content": "\n# 通用技能指南\n\n欢迎使用技能系统！\n\n## 可用技能\n\n### 搜索技能\n使用 `searchSkills` 工具搜索相关技能。\n\n### 获取详情\n使用 `getSkillDetails` 获取技能详细内容。\n\n## 使用示例\n\n- 搜索: `搜索与前端开发相关的技能`\n- 获取详情: `获取技能 前端开发`\n",
+  "reference_list": [],
+  "filePath": "/buildingai/packages/api/skills/general-skill/SKILL.md"
+}

@@ -23,6 +23,8 @@ import { AiMcpServerService } from "@modules/ai/mcp/services/ai-mcp-server.servi
 import { AiMcpToolService } from "@modules/ai/mcp/services/ai-mcp-tool.service";
 import { AiModelService } from "@modules/ai/model/services/ai-model.service";
 import { AiProviderService } from "@modules/ai/provider/services/ai-provider.service";
+import { AiSkillModule } from "@modules/ai/skill/ai-skill.module";
+import { AiSkillToolService } from "@modules/ai/skill/services/ai-skill-tool.service";
 import { ConfigModule } from "@modules/config/config.module";
 import { UserModule } from "@modules/user/user.module";
 import { forwardRef, MiddlewareConsumer, Module, NestModule, RequestMethod } from "@nestjs/common";
@@ -77,6 +79,7 @@ import { AgentsService } from "./services/agents.service";
         ]),
         forwardRef(() => AiDatasetsModule),
         AiMemoryModule,
+        AiSkillModule,
         ConfigModule,
         UserModule,
     ],
@@ -121,6 +124,7 @@ import { AgentsService } from "./services/agents.service";
         SecretTemplateService,
         AiMcpServerService,
         AiMcpToolService,
+        AiSkillToolService,
     ],
     exports: [AgentsService],
 })

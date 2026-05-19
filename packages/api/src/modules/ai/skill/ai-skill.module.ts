@@ -1,13 +1,11 @@
 import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { AiSkill } from "@buildingai/db";
 import { AiSkillService } from "./services/ai-skill.service";
+import { AiSkillToolService } from "./services/ai-skill-tool.service";
 import { AiSkillController } from "./controllers/ai-skill.controller";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([AiSkill])],
-    providers: [AiSkillService],
+    providers: [AiSkillService, AiSkillToolService],
     controllers: [AiSkillController],
-    exports: [AiSkillService],
+    exports: [AiSkillService, AiSkillToolService],
 })
 export class AiSkillModule {}

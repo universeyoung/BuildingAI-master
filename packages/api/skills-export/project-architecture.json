@@ -1,0 +1,256 @@
+{
+  "name": "project-architecture",
+  "description": "Comprehensive guide to BuildingAI monorepo structure, packages, and development patterns. Use this skill when you need to:",
+  "type": "domain",
+  "keywords": [
+    "project",
+    "architecture",
+    "buildingai",
+    "when",
+    "to",
+    "use",
+    "instructions",
+    "locate",
+    "where",
+    "specific",
+    "functionality",
+    "is",
+    "implemented",
+    "understand",
+    "package",
+    "relationships",
+    "and",
+    "dependencies",
+    "find",
+    "the",
+    "correct",
+    "import",
+    "paths",
+    "patterns",
+    "navigate",
+    "module",
+    "organization",
+    "structure",
+    "development",
+    "conventions",
+    "know",
+    "what",
+    "each",
+    "provides",
+    "how",
+    "it",
+    "references",
+    "base",
+    "md",
+    "basecontroller",
+    "baseservice",
+    "cache",
+    "cacheservice",
+    "redisservice",
+    "config",
+    "configuration",
+    "management",
+    "constants",
+    "shared",
+    "db",
+    "database",
+    "layer",
+    "typeorm",
+    "entities",
+    "decorators",
+    "custom",
+    "dict",
+    "dictionary",
+    "dto",
+    "dtos",
+    "errors",
+    "error",
+    "handling",
+    "logger",
+    "logging",
+    "utilities",
+    "utils",
+    "utility",
+    "functions",
+    "http",
+    "client",
+    "ai",
+    "sdk",
+    "packages",
+    "web",
+    "frontend",
+    "extension",
+    "pipe",
+    "validation",
+    "pipes",
+    "types",
+    "typescript",
+    "upgrade",
+    "version",
+    "scripts",
+    "di",
+    "dependency",
+    "injection",
+    "wechat",
+    "integration",
+    "api",
+    "main",
+    "nestjs",
+    "application",
+    "core",
+    "reusable",
+    "business",
+    "logic",
+    "cli",
+    "tooling",
+    "desktop",
+    "common",
+    "src",
+    "modules",
+    "assets",
+    "extend",
+    "entity",
+    "from",
+    "for",
+    "crud",
+    "operations",
+    "with",
+    "injectrepository",
+    "repositories",
+    "see",
+    "available",
+    "methods",
+    "features",
+    "consolecontroller",
+    "path",
+    "groupname",
+    "admin",
+    "apis",
+    "auto",
+    "auth",
+    "permissions",
+    "webcontroller",
+    "requires",
+    "by",
+    "default",
+    "playground",
+    "decorator",
+    "get",
+    "current",
+    "user",
+    "details",
+    "authentication",
+    "guards",
+    "httperrorfactory",
+    "caching",
+    "file",
+    "upload",
+    "services",
+    "stores",
+    "ui",
+    "components",
+    "postgresql",
+    "table",
+    "design",
+    "schema",
+    "implementation"
+  ],
+  "priority": "medium",
+  "enforcement": "suggest",
+  "content": "\n# BuildingAI Project Architecture\n\nComprehensive guide to BuildingAI monorepo structure, packages, and development patterns.\n\n## When to Use\n\nUse this skill when you need to:\n\n- Locate where specific functionality is implemented\n- Understand package relationships and dependencies\n- Find the correct import paths and patterns\n- Navigate module organization and structure\n- Understand development patterns and conventions\n- Know what each package provides and how to use it\n\n## Instructions\n\n### Understanding the Monorepo Structure\n\nThe BuildingAI project is a pnpm workspace monorepo with the following structure:\n\n```\nbuildingai/\n├── packages/\n│   ├── @buildingai/              # Shared packages\n│   │   ├── ai-sdk/                 # AI SDK (legacy)\n│   │   ├── ai-sdk-new/             # AI SDK (Vercel AI SDK 6.x)\n│   │   ├── base/                   # BaseController, BaseService\n│   │   ├── cache/                  # CacheService, RedisService\n│   │   ├── config/                 # Configuration management\n│   │   ├── constants/               # Shared constants\n│   │   ├── db/                     # TypeORM, entities, migrations\n│   │   ├── decorators/             # Custom decorators\n│   │   ├── di/                     # Dependency injection utilities\n│   │   ├── dict/                   # Dictionary/configuration management\n│   │   ├── dto/                    # Shared DTOs\n│   │   ├── errors/                 # HttpErrorFactory\n│   │   ├── eslint-config/          # ESLint configuration\n│   │   ├── extension-sdk/          # Extension development SDK\n│   │   ├── logger/                 # Logging utilities\n│   │   ├── pipe/                   # Validation pipes\n│   │   ├── types/                  # TypeScript type definitions\n│   │   ├── typescript-config/      # TypeScript configurations\n│   │   ├── upgrade/                # Version upgrade scripts\n│   │   ├── utils/                  # Utility functions, HTTP client\n│   │   ├── web/                    # Frontend shared packages\n│   │   │   ├── hooks/              # React hooks\n│   │   │   ├── http/               # HTTP client\n│   │   │   ├── services/           # Frontend services\n│   │   │   ├── stores/             # State management (Pinia)\n│   │   │   ├── types/              # TypeScript types\n│   │   │   └── ui/                 # UI components\n│   │   ├── di/                     # Dependency injection utilities\n│   │   └── wechat-sdk/             # WeChat integration SDK\n│   ├── api/                        # Main NestJS API application\n│   ├── core/                       # Reusable business logic modules\n│   ├── cli/                        # CLI tooling\n│   └── client/                     # Desktop client (Tauri + React)\n├── skills/                         # AI skills for development guidance\n├── extensions/                     # Plugin extensions (runtime loaded)\n├── public/                         # Static web assets\n└── scripts/                        # Build and utility scripts\n```\n\n### Using Reference Files\n\nFor detailed information about each package, consult the corresponding reference file in\n`references/`:\n\n**@buildingai Packages:**\n\n- `references/base.md` - BaseController, BaseService\n- `references/cache.md` - CacheService, RedisService\n- `references/config.md` - Configuration management\n- `references/constants.md` - Shared constants\n- `references/db.md` - Database layer (TypeORM, entities)\n- `references/decorators.md` - Custom decorators\n- `references/dict.md` - Dictionary management\n- `references/dto.md` - Shared DTOs\n- `references/errors.md` - Error handling\n- `references/logger.md` - Logging utilities\n- `references/utils.md` - Utility functions, HTTP client\n- `references/ai-sdk.md` - AI SDK packages\n- `references/web.md` - Frontend packages\n- `references/extension-sdk.md` - Extension SDK\n- `references/pipe.md` - Validation pipes\n- `references/types.md` - TypeScript types\n- `references/upgrade.md` - Version upgrade scripts\n- `references/di.md` - Dependency injection utilities\n- `references/wechat-sdk.md` - WeChat integration SDK\n\n**Main Packages:**\n\n- `references/api.md` - Main NestJS API application\n- `references/core.md` - Reusable business logic\n- `references/cli.md` - CLI tooling\n- `references/client.md` - Desktop client\n\nLoad these reference files when you need detailed information about a specific package's exports,\nusage patterns, or implementation details.\n\n### Import Patterns\n\n**Backend (API/Core) Import Order:**\n\n1. `@buildingai/*` packages\n2. `@nestjs/*` packages\n3. `@common/*` (API only)\n4. `@modules/*` (API only)\n5. `@core/*` (API only)\n6. Third-party packages\n7. Relative paths\n\n**Path Aliases (API):**\n\n- `@common/*` → `src/common/*`\n- `@modules/*` → `src/modules/*`\n- `@core/*` → `src/core/*`\n- `@assets/*` → `src/assets/*`\n\n### Development Patterns\n\n**Service Pattern:**\n\n- Extend `BaseService<Entity>` from `@buildingai/base` for CRUD operations\n- Use dependency injection with `@InjectRepository()` for repositories\n- See `references/base.md` for available methods and features\n\n**Controller Pattern:**\n\n- Use `@ConsoleController(path, groupName)` for admin APIs (auto auth + permissions)\n- Use `@WebController(path)` for frontend APIs (requires auth by default)\n- Use `@Playground()` decorator to get current user\n- See `references/decorators.md` and `references/api.md` for details\n\n\\*\\*Module Structure: `src/modules/{module-name}/` with controllers, services, and DTOs\n\n### Quick Navigation\n\nWhen implementing features, reference the appropriate package:\n\n- **Authentication**: `references/decorators.md` (`@Playground()`), `references/api.md` (guards)\n- **Database**: `references/db.md` (entities), `references/base.md` (BaseService CRUD)\n- **Error Handling**: `references/errors.md` (HttpErrorFactory)\n- **Caching**: `references/cache.md` (CacheService, RedisService)\n- **File Upload**: `references/core.md` (upload services)\n- **AI Functionality**: `references/ai-sdk.md`, `references/api.md` (AI modules)\n- **Frontend**: `references/web.md` (services, stores, UI components)\n\n### Skills Integration\n\nThis skill works with other skills:\n\n- **`postgresql-table-design`** - For database schema design\n- **`frontend-design`** - For frontend UI development\n- **`ai-sdk`** - For AI functionality implementation\n\nWhen implementing features, reference the appropriate package reference file to understand what's\navailable and how to use it.\n",
+  "reference_list": [
+    {
+      "name": "ai-sdk",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/ai-sdk.md"
+    },
+    {
+      "name": "api",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/api.md"
+    },
+    {
+      "name": "base",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/base.md"
+    },
+    {
+      "name": "cache",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/cache.md"
+    },
+    {
+      "name": "cli",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/cli.md"
+    },
+    {
+      "name": "client",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/client.md"
+    },
+    {
+      "name": "config",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/config.md"
+    },
+    {
+      "name": "constants",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/constants.md"
+    },
+    {
+      "name": "core",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/core.md"
+    },
+    {
+      "name": "db",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/db.md"
+    },
+    {
+      "name": "decorators",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/decorators.md"
+    },
+    {
+      "name": "di",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/di.md"
+    },
+    {
+      "name": "dict",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/dict.md"
+    },
+    {
+      "name": "dto",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/dto.md"
+    },
+    {
+      "name": "errors",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/errors.md"
+    },
+    {
+      "name": "extension-sdk",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/extension-sdk.md"
+    },
+    {
+      "name": "logger",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/logger.md"
+    },
+    {
+      "name": "pipe",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/pipe.md"
+    },
+    {
+      "name": "types",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/types.md"
+    },
+    {
+      "name": "upgrade",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/upgrade.md"
+    },
+    {
+      "name": "utils",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/utils.md"
+    },
+    {
+      "name": "web",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/web.md"
+    },
+    {
+      "name": "wechat-sdk",
+      "path": "/buildingai/packages/api/skills/project-architecture/references/wechat-sdk.md"
+    }
+  ],
+  "filePath": "/buildingai/packages/api/skills/project-architecture/SKILL.md"
+}

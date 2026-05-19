@@ -1,9 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { readFileSync, readdirSync, statSync } from "fs";
-import { join } from "path";
-import { Repository } from "typeorm";
-import { AiSkill } from "@buildingai/db";
+import { readFileSync, readdirSync, statSync, existsSync, writeFileSync, mkdirSync } from "fs";
+import { join, resolve } from "path";
 
 /**
  * 技能元数据接口
@@ -21,11 +18,29 @@ export interface SkillMetadata {
 }
 
 /**
+ * 技能数据结构
+ */
+export interface Skill {
+    name: string;
+    description: string;
+    type: string;
+    keywords?: string[];
+    intentPatterns?: string[];
+    filePathPatterns?: string[];
+    contentPatterns?: string[];
+    priority: string;
+    enforcement: string;
+    content?: string;
+    reference_list?: { name: string; path: string }[];
+    filePath: string;
+}
+
+/**
  * 匹配的技能结果
  */
 export interface MatchedSkill {
-    skill: AiSkill;
-    matchType: "keyword" | "intent" | "filePath" | "content";
+    skill: Skill;
+    matchType: "keyword" | "intent" | "filePath" | "content" | "name";
     confidence: number;
     matchedText?: string;
 }
@@ -33,22 +48,56 @@ export interface MatchedSkill {
 /**
  * 技能服务
  * 
- * 负责加载、解析和管理技能文件
+ * 负责从文件系统加载、解析和管理技能包
+ * 不依赖数据库，直接读取 skills 文件夹
  */
 @Injectable()
 export class AiSkillService implements OnModuleInit {
     private readonly logger = new Logger(AiSkillService.name);
-    private skillsDir: string;
+    private readonly skillsDirs: string[];
+    private readonly exportDir: string;
+    private skillsCache: Map<string, Skill> = new Map();
 
-    constructor(
-        @InjectRepository(AiSkill)
-        private readonly skillRepository: Repository<AiSkill>,
-    ) {
-        this.skillsDir = join(process.cwd(), "skills");
+    constructor() {
+        const cwd = process.cwd();
+        this.skillsDirs = [
+            join(cwd, "skills"),
+            join(cwd, "..", "skills"),
+            join(resolve(cwd, ".."), "skills"),
+            join(cwd, "packages", "api", "skills"),
+            "/buildingai/skills",
+            "/buildingai/packages/api/skills",
+        ];
+        this.exportDir = join(cwd, "skills-export");
     }
 
     async onModuleInit() {
         await this.loadAllSkills();
+        await this.exportSkillsToJson();
+    }
+
+    /**
+     * 获取所有有效的技能目录
+     */
+    private getAllValidSkillsDirs(): string[] {
+        const validDirs: string[] = [];
+        
+        this.logger.log(`Current working directory: ${process.cwd()}`);
+        this.logger.log(`Searching for skills directories...`);
+        
+        for (const dir of this.skillsDirs) {
+            const exists = existsSync(dir);
+            this.logger.log(`  Checking: ${dir} - ${exists ? "EXISTS" : "not found"}`);
+            if (exists && statSync(dir).isDirectory()) {
+                const entries = readdirSync(dir, { withFileTypes: true });
+                const subdirs = entries.filter(e => e.isDirectory()).map(e => e.name);
+                this.logger.log(`  Found subdirectories: ${subdirs.join(", ")}`);
+                validDirs.push(dir);
+            }
+        }
+        
+        this.logger.log(`Found ${validDirs.length} valid skills directories`);
+        return validDirs;
     }
 
     /**
@@ -56,24 +105,89 @@ export class AiSkillService implements OnModuleInit {
      */
     async loadAllSkills(): Promise<void> {
         try {
-            const skillNames = this.getSkillDirectoryNames();
+            const skillsDirs = this.getAllValidSkillsDirs();
             
-            for (const skillName of skillNames) {
-                await this.loadSkill(skillName);
+            if (skillsDirs.length === 0) {
+                this.logger.warn("No skills directories found");
+                this.createDefaultSkills();
+                return;
             }
 
-            this.logger.log(`Loaded ${skillNames.length} skills`);
+            this.skillsCache.clear();
+
+            for (const skillsDir of skillsDirs) {
+                const skillNames = this.getSkillDirectoryNames(skillsDir);
+                this.logger.log(`Loading ${skillNames.length} skills from ${skillsDir}`);
+                
+                for (const skillName of skillNames) {
+                    if (this.skillsCache.has(skillName)) {
+                        this.logger.log(`  Skipping duplicate skill: ${skillName}`);
+                        continue;
+                    }
+                    
+                    const skill = await this.loadSkill(skillName, skillsDir);
+                    if (skill) {
+                        this.skillsCache.set(skill.name, skill);
+                        this.logger.log(`  Loaded skill: ${skill.name}`);
+                    }
+                }
+            }
+
+            this.logger.log(`Total loaded skills: ${this.skillsCache.size}`);
         } catch (error) {
             this.logger.error(`Failed to load skills: ${error.message}`);
         }
     }
 
     /**
+     * 创建默认技能示例
+     */
+    private createDefaultSkills(): void {
+        this.logger.log("Creating default skills directory...");
+        
+        try {
+            const defaultDir = join(process.cwd(), "skills");
+            mkdirSync(defaultDir, { recursive: true });
+
+            const defaultSkill = {
+                name: "通用技能",
+                description: "通用技能指南，包含日常任务处理的基本方法",
+                type: "general",
+                keywords: ["技能", "帮助", "指南", "任务", "操作"],
+                intentPatterns: ["如何.*", "怎么.*", "如何做.*", "怎样.*"],
+                priority: "medium",
+                enforcement: "suggest",
+                content: "# 通用技能指南\n\n欢迎使用技能系统！\n\n## 可用技能\n\n### 搜索技能\n使用 `searchSkills` 工具搜索相关技能。\n\n### 获取详情\n使用 `getSkillDetails` 获取技能详细内容。\n\n## 使用示例\n\n- 搜索: `搜索与前端开发相关的技能`\n- 获取详情: `获取技能 前端开发`\n"
+            };
+
+            const skillDir = join(defaultDir, "general-skill");
+            mkdirSync(skillDir, { recursive: true });
+            
+            const skillContent = `---
+name: ${defaultSkill.name}
+description: ${defaultSkill.description}
+type: ${defaultSkill.type}
+keywords: ${JSON.stringify(defaultSkill.keywords)}
+intent_patterns: ${JSON.stringify(defaultSkill.intentPatterns)}
+priority: ${defaultSkill.priority}
+enforcement: ${defaultSkill.enforcement}
+---
+
+${defaultSkill.content}`;
+
+            writeFileSync(join(skillDir, "SKILL.md"), skillContent);
+            this.logger.log("Created default skill: general-skill");
+        } catch (error) {
+            this.logger.error(`Failed to create default skills: ${error.message}`);
+        }
+    }
+
+    /**
      * 获取技能目录名称列表
      */
-    private getSkillDirectoryNames(): string[] {
+    private getSkillDirectoryNames(skillsDir: string): string[] {
         try {
-            const entries = readdirSync(this.skillsDir, { withFileTypes: true });
+            const entries = readdirSync(skillsDir, { withFileTypes: true });
             return entries
                 .filter((entry) => entry.isDirectory())
                 .map((entry) => entry.name);
@@ -85,8 +199,8 @@ export class AiSkillService implements OnModuleInit {
     /**
      * 加载单个技能
      */
-    async loadSkill(skillName: string): Promise<AiSkill | null> {
-        const skillPath = join(this.skillsDir, skillName);
+    async loadSkill(skillName: string, skillsDir: string): Promise<Skill | null> {
+        const skillPath = join(skillsDir, skillName);
         const skillMdPath = join(skillPath, "SKILL.md");
 
         if (!statSync(skillMdPath, { throwIfNoEntry: false })?.isFile()) {
@@ -100,11 +214,13 @@ export class AiSkillService implements OnModuleInit {
 
             const reference_list = this.scanReferences(skillPath);
 
-            const skillData: Partial<AiSkill> = {
+            const extractedKeywords = this.extractKeywords(metadata, body);
+
+            const skill: Skill = {
                 name: metadata.name || skillName,
-                description: metadata.description || "",
+                description: metadata.description || this.extractDescription(body),
                 type: metadata.type || "domain",
-                keywords: metadata.keywords,
+                keywords: extractedKeywords,
                 intentPatterns: metadata.intentPatterns,
                 filePathPatterns: metadata.filePathPatterns,
                 contentPatterns: metadata.contentPatterns,
@@ -115,20 +231,72 @@ export class AiSkillService implements OnModuleInit {
                 filePath: skillMdPath,
             };
 
-            let skill = await this.skillRepository.findOneBy({ name: skillName });
-            
-            if (skill) {
-                await this.skillRepository.update(skill.id, skillData);
-            } else {
-                skill = this.skillRepository.create(skillData);
-                await this.skillRepository.save(skill);
-            }
-
             return skill;
         } catch (error) {
             this.logger.error(`Failed to load skill ${skillName}: ${error.message}`);
             return null;
         }
+    }
+
+    /**
+     * 从技能内容中提取关键词
+     */
+    private extractKeywords(metadata: SkillMetadata, content: string): string[] {
+        const keywords = new Set<string>();
+
+        if (metadata.keywords && metadata.keywords.length > 0) {
+            metadata.keywords.forEach(k => keywords.add(k.toLowerCase()));
+        }
+
+        if (metadata.name) {
+            metadata.name.split(/[-_ ]+/).forEach(part => {
+                if (part.length >= 2) {
+                    keywords.add(part.toLowerCase());
+                }
+            });
+        }
+
+        if (content) {
+            const titlePattern = /^#{1,2}\s+(.+)$/gm;
+            let match;
+            while ((match = titlePattern.exec(content)) !== null) {
+                match[1].split(/[^a-zA-Z0-9\u4e00-\u9fa5]+/).forEach(word => {
+                    if (word.length >= 2) {
+                        keywords.add(word.toLowerCase());
+                    }
+                });
+            }
+
+            const listPattern = /^[-*]\s+(.+)$/gm;
+            while ((match = listPattern.exec(content)) !== null) {
+                match[1].split(/[^a-zA-Z0-9\u4e00-\u9fa5]+/).forEach(word => {
+                    if (word.length >= 2) {
+                        keywords.add(word.toLowerCase());
+                    }
+                });
+            }
+        }
+
+        return Array.from(keywords);
+    }
+
+    /**
+     * 从内容中提取描述
+     */
+    private extractDescription(content: string): string {
+        const lines = content.trim().split("\n");
+        let description = "";
+        
+        for (const line of lines) {
+            if (!line.startsWith("#") && !line.startsWith("-") && !line.startsWith("*") && line.trim()) {
+                description += line.trim() + " ";
+                if (description.length >= 100) {
+                    break;
+                }
+            }
+        }
+        
+        return description.trim().substring(0, 200);
     }
 
     /**
@@ -180,7 +348,7 @@ export class AiSkillService implements OnModuleInit {
 
         for (const line of lines) {
             const trimmed = line.trim();
-            
+
             if (trimmed.startsWith("#")) continue;
 
             const colonIndex = trimmed.indexOf(":");
@@ -260,7 +428,7 @@ export class AiSkillService implements OnModuleInit {
         if (!value) return undefined;
 
         const trimmed = value.trim();
-        
+
         if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
             try {
                 return JSON.parse(trimmed);
@@ -288,7 +456,7 @@ export class AiSkillService implements OnModuleInit {
 
         try {
             const entries = readdirSync(refsDir, { withFileTypes: true });
-            
+
             for (const entry of entries) {
                 if (entry.isFile() && entry.name.endsWith(".md")) {
                     references.push({
@@ -305,20 +473,17 @@ export class AiSkillService implements OnModuleInit {
     }
 
     /**
-     * 获取所有启用的技能
+     * 获取所有技能
      */
-    async getAllEnabledSkills(): Promise<AiSkill[]> {
-        return this.skillRepository.find({
-            where: { isEnabled: true },
-            order: { sortOrder: "ASC", priority: "ASC" },
-        });
+    async getAllEnabledSkills(): Promise<Skill[]> {
+        return Array.from(this.skillsCache.values());
     }
 
     /**
      * 根据名称获取技能
      */
-    async getSkillByName(name: string): Promise<AiSkill | null> {
-        return this.skillRepository.findOneBy({ name });
+    async getSkillByName(name: string): Promise<Skill | null> {
+        return this.skillsCache.get(name) || null;
     }
 
     /**
@@ -329,6 +494,8 @@ export class AiSkillService implements OnModuleInit {
         fileContent?: string;
     }): Promise<MatchedSkill[]> {
         const skills = await this.getAllEnabledSkills();
+        this.logger.log(`Total skills to match: ${skills.length}`);
+        
         const matches: MatchedSkill[] = [];
 
         for (const skill of skills) {
@@ -345,7 +512,7 @@ export class AiSkillService implements OnModuleInit {
      * 匹配单个技能
      */
     private matchSkill(
-        skill: AiSkill,
+        skill: Skill,
         prompt: string,
         options?: { filePath?: string; fileContent?: string },
     ): MatchedSkill | null {
@@ -417,6 +584,16 @@ export class AiSkillService implements OnModuleInit {
             }
         }
 
+        // 名称匹配（最低优先级）
+        if (skill.name.toLowerCase().includes(lowerPrompt) || lowerPrompt.includes(skill.name.toLowerCase())) {
+            return {
+                skill,
+                matchType: "name",
+                confidence: 0.5,
+                matchedText: skill.name,
+            };
+        }
+
         return null;
     }
 
@@ -428,7 +605,7 @@ export class AiSkillService implements OnModuleInit {
             .replace(/\./g, "\\.")
             .replace(/\*/g, ".*")
             .replace(/\?/g, ".");
-        
+
         return new RegExp(`^${regexPattern}$`).test(filePath);
     }
 
@@ -437,20 +614,14 @@ export class AiSkillService implements OnModuleInit {
      */
     async reloadSkills(): Promise<void> {
         await this.loadAllSkills();
-    }
-
-    /**
-     * 更新技能状态
-     */
-    async updateSkillStatus(name: string, isEnabled: boolean): Promise<void> {
-        await this.skillRepository.update({ name }, { isEnabled });
+        await this.exportSkillsToJson();
     }
 
     /**
      * 获取技能的引用内容
      */
     async getReferenceContent(skillName: string, referenceName: string): Promise<string | null> {
-        const skill = await this.getSkillByName(skillName);
+        const skill = this.skillsCache.get(skillName);
         if (!skill) return null;
 
         const reference = skill.reference_list?.find((r) => r.name === referenceName);
@@ -461,5 +632,73 @@ export class AiSkillService implements OnModuleInit {
         } catch {
             return null;
         }
+    }
+
+    /**
+     * 导出所有技能到 JSON 文件
+     */
+    async exportSkillsToJson(): Promise<void> {
+        try {
+            if (!existsSync(this.exportDir)) {
+                mkdirSync(this.exportDir, { recursive: true });
+            }
+
+            const skills = await this.getAllEnabledSkills();
+            
+            // 导出技能列表
+            const skillsList = skills.map(skill => ({
+                name: skill.name,
+                description: skill.description,
+                type: skill.type,
+                priority: skill.priority,
+                keywords: skill.keywords || [],
+                references: skill.reference_list?.map(r => r.name) || [],
+                filePath: skill.filePath,
+            }));
+
+            writeFileSync(
+                join(this.exportDir, "skills-index.json"),
+                JSON.stringify(skillsList, null, 2),
+                "utf-8"
+            );
+
+            // 导出每个技能的详细信息
+            for (const skill of skills) {
+                const skillData = {
+                    ...skill,
+                    reference_list: skill.reference_list?.map(r => ({
+                        name: r.name,
+                        path: r.path,
+                    })) || [],
+                };
+                
+                writeFileSync(
+                    join(this.exportDir, `${skill.name}.json`),
+                    JSON.stringify(skillData, null, 2),
+                    "utf-8"
+                );
+            }
+
+            this.logger.log(`Exported ${skills.length} skills to ${this.exportDir}`);
+        } catch (error) {
+            this.logger.error(`Failed to export skills: ${error.message}`);
+        }
+    }
+
+    /**
+     * 获取技能统计信息
+     */
+    async getSkillStats(): Promise<{ total: number; types: Record<string, number> }> {
+        const skills = await this.getAllEnabledSkills();
+        const types: Record<string, number> = {};
+
+        for (const skill of skills) {
+            types[skill.type] = (types[skill.type] || 0) + 1;
+        }
+
+        return {
+            total: skills.length,
+            types,
+        };
     }
 }

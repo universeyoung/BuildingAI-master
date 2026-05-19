@@ -28,6 +28,8 @@ import { AiMcpToolService } from "../mcp/services/ai-mcp-tool.service";
 import { AiMemoryModule } from "../memory/ai-memory.module";
 import { AiModelService } from "../model/services/ai-model.service";
 import { AiProviderService } from "../provider/services/ai-provider.service";
+import { AiSkillModule } from "../skill/ai-skill.module";
+import { AiSkillToolService } from "../skill/services/ai-skill-tool.service";
 import { AiChatFeedbackConsoleController } from "./controllers/console/ai-chat-feedback.controller";
 import { AiChatRecordConsoleController } from "./controllers/console/ai-chat-record.controller";
 import { AiChatFeedbackWebController } from "./controllers/web/ai-chat-feedback.controller";
@@ -52,6 +54,7 @@ import { ChatConfigService } from "./services/chat-config.service";
 @Module({
     imports: [
         AiMemoryModule,
+        AiSkillModule,
         UserModule,
         TypeOrmModule.forFeature([
             AiModel,
@@ -95,6 +98,7 @@ import { ChatConfigService } from "./services/chat-config.service";
         AiChatRecordService,
         AiChatsMessageService,
         AiChatFeedbackService,
+        AiSkillToolService,
     ],
     exports: [ChatConfigService, ChatCompletionService, AiChatRecordService, AiChatsMessageService],
 })

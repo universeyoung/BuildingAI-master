@@ -11,6 +11,7 @@ export { AiChatRecord } from "./ai-chat-record.entity";
 export { AiChatToolCall } from "./ai-chat-tool-call.entity";
 export { AiMcpServer, McpCommunicationType, McpServerType } from "./ai-mcp-server.entity";
 export { AiMcpTool } from "./ai-mcp-tool.entity";
+export { AiSkill } from "./ai-skill.entity";
 export { AiModel } from "./ai-model.entity";
 export { AiProvider } from "./ai-provider.entity";
 export { AiUserMcpServer } from "./ai-user-mcp-server.entity";

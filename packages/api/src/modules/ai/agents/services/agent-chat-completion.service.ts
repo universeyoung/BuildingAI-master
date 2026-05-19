@@ -390,7 +390,7 @@ export class AgentChatCompletionService {
                                   } as PlanningContext)
                                 : undefined;
 
-                        const tools = this.buildTools(
+                        const tools = await this.buildTools(
                             agent,
                             mcpResult.tools as Record<string, Tool>,
                             useToolForDocuments ? documentContents : undefined,
@@ -719,15 +719,15 @@ export class AgentChatCompletionService {
         });
     }
 
-    private buildTools(
+    private async buildTools(
         agent: Agent,
         mcpTools: Record<string, Tool>,
         documentContents?: Array<{ filename: string; content: string }>,
         planningContext?: PlanningContext,
-    ): Record<string, Tool> {
+    ): Promise<Record<string, Tool>> {
         const tools: Record<string, Tool> = {
             ...mcpTools,
-            ...this.aiSkillToolService.getSkillTools(),
+            ...await this.aiSkillToolService.getSkillTools(),
         };
 
         tools.getWeather = getWeather;

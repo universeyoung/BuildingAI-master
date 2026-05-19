@@ -1,0 +1,38 @@
+{
+  "name": "ai-sdk",
+  "description": "When you need up-to-date information about the AI SDK: Search the bundled documentation and source code in `node_modules/ai/`:",
+  "type": "domain",
+  "keywords": [
+    "ai",
+    "sdk",
+    "documentation",
+    "provider",
+    "specific",
+    "information",
+    "34",
+    "glob",
+    "node",
+    "modules",
+    "docs",
+    "mdx",
+    "for",
+    "files",
+    "src",
+    "ts",
+    "source"
+  ],
+  "priority": "medium",
+  "enforcement": "suggest",
+  "content": "\n## AI SDK Documentation\n\nWhen you need up-to-date information about the AI SDK:\n\n### If using ai@6.0.34 or above\n\nSearch the bundled documentation and source code in `node_modules/ai/`:\n\n1. **Documentation**: `grep \"your query\" node_modules/ai/docs/`\n2. **Source code**: `grep \"your query\" node_modules/ai/src/`\n\nTo find specific files:\n\n- `glob \"node_modules/ai/docs/**/*.mdx\"` for documentation files\n- `glob \"node_modules/ai/src/**/*.ts\"` for source files\n\nProvider packages (`@ai-sdk/openai`, `@ai-sdk/anthropic`, etc.) also include bundled docs in their\nrespective `node_modules/@ai-sdk/<provider>/docs/` directories.\n\n**When in doubt, update to the latest version of the AI SDK.**\n\n### Otherwise\n\n1. Search the docs: `https://ai-sdk.dev/api/search-docs?q=your_query`\n2. The response includes matches with links ending in `.md`\n3. Fetch those `.md` URLs directly to get plain text content (e.g.\n   `https://ai-sdk.dev/docs/agents/building-agents.md`)\n\nUse these resources for current API details, examples, and usage patterns.\n\nFor common errors and troubleshooting, see [Common Errors Reference](references/common-errors.md).\n\nFor using Vercel AI Gateway, see [AI Gateway Reference](references/ai-gateway.md).\n\n## Provider-Specific Information (ai@6.0.34+)\n\nFor questions about specific providers (OpenAI, Anthropic, Google, etc.), search their dedicated\npackages:\n\n1. **Provider documentation**: `grep \"your query\" node_modules/@ai-sdk/<provider>/docs/`\n2. **Provider source code**: `grep \"your query\" node_modules/@ai-sdk/<provider>/src/`\n\nTo find provider files:\n\n- `glob \"node_modules/@ai-sdk/<provider>/docs/**/*.mdx\"` for provider documentation\n- `glob \"node_modules/@ai-sdk/<provider>/src/**/*.ts\"` for provider source files\n\nThis is especially important for `providerOptions`, which are provider-specific settings passed to\nmodel calls. Each provider has unique options documented in their package.\n",
+  "reference_list": [
+    {
+      "name": "ai-gateway",
+      "path": "/buildingai/packages/api/skills/ai-sdk/references/ai-gateway.md"
+    },
+    {
+      "name": "common-errors",
+      "path": "/buildingai/packages/api/skills/ai-sdk/references/common-errors.md"
+    }
+  ],
+  "filePath": "/buildingai/packages/api/skills/ai-sdk/SKILL.md"
+}

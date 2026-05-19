@@ -1,13 +1,12 @@
 import { Controller, Get, Query } from "@nestjs/common";
-import { AiSkillService, type MatchedSkill } from "../services/ai-skill.service";
-import { AiSkill } from "@buildingai/db";
+import { AiSkillService, type MatchedSkill, type Skill } from "../services/ai-skill.service";
 
 @Controller("/api/ai/skill")
 export class AiSkillController {
     constructor(private readonly skillService: AiSkillService) {}
 
     @Get()
-    async getAllSkills(): Promise<AiSkill[]> {
+    async getAllSkills(): Promise<Skill[]> {
         return this.skillService.getAllEnabledSkills();
     }
 
@@ -27,7 +26,7 @@ export class AiSkillController {
     }
 
     @Get("/:name")
-    async getSkill(@Query("name") name: string): Promise<AiSkill | null> {
+    async getSkill(@Query("name") name: string): Promise<Skill | null> {
         return this.skillService.getSkillByName(name);
     }
 

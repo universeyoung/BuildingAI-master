@@ -256,7 +256,7 @@ export class ChatCompletionService {
                             : modelMsgs;
                         const promptText = formatMessagesForTokenCount(finalMessages);
 
-                        const tools = this.buildTools(
+                        const tools = await this.buildTools(
                             model.provider.provider,
                             provider,
                             mcpTools,
@@ -913,16 +913,16 @@ export class ChatCompletionService {
         }));
     }
 
-    private buildTools(
+    private async buildTools(
         providerId: string,
         provider: ReturnType<typeof getProvider>,
         mcpTools: Record<string, unknown>,
         documentContents?: Array<{ filename: string; content: string }>,
-    ): Record<string, Tool> {
+    ): Promise<Record<string, Tool>> {
         const tools: Record<string, Tool> = {
             getWeather,
             ...mcpTools,
-            ...this.aiSkillToolService.getSkillTools(),
+            ...await this.aiSkillToolService.getSkillTools(),
         };
 
         if (documentContents?.length) {
