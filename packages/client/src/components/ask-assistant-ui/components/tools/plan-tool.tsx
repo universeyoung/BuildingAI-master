@@ -38,7 +38,8 @@ function isStructuredPlan(output: unknown): output is ExecutionPlanPayload {
   );
 }
 
-function parsePlanContent(planText: string): React.ReactNode {
+function parsePlanContent(planText: string | undefined): React.ReactNode {
+  if (!planText) return null;
   const lines = planText.trim().split(/\n+/).filter(Boolean);
   if (lines.length <= 1) return <p className="whitespace-pre-wrap">{planText}</p>;
   const items = lines.map((line) => line.replace(/^\s*\d+[.)]\s*/, "").trim()).filter(Boolean);

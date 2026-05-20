@@ -3,6 +3,8 @@
     "name": "ai-sdk",
     "description": "When you need up-to-date information about the AI SDK: Search the bundled documentation and source code in `node_modules/ai/`:",
     "type": "domain",
+    "version": "\"1.0\"",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "ai",
@@ -23,16 +25,19 @@
       "ts",
       "source"
     ],
+    "scripts": [],
     "references": [
       "ai-gateway",
       "common-errors"
     ],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/ai-sdk/SKILL.md"
   },
   {
     "name": "frontend-design",
     "description": "This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic \"AI slop\" aesthetics. Implement real working code with exceptional attention to aesthetic details",
     "type": "domain",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "frontend",
@@ -146,13 +151,16 @@
       "defaulting",
       "solid"
     ],
+    "scripts": [],
     "references": [],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/frontend-design/SKILL.md"
   },
   {
     "name": "通用技能",
     "description": "通用技能指南，包含日常任务处理的基本方法",
     "type": "general",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "技能",
@@ -170,13 +178,16 @@
       "获取技能",
       "前端开发"
     ],
+    "scripts": [],
     "references": [],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/general-skill/SKILL.md"
   },
   {
     "name": "postgresql-table-design",
     "description": "time-series/event/log data. When used, prefer `BIGINT GENERATED ALWAYS AS IDENTITY`; use `UUID` only when global uniqueness/opacity is needed.",
     "type": "domain",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "postgresql",
@@ -680,13 +691,16 @@
       "limit",
       "allowed"
     ],
+    "scripts": [],
     "references": [],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/postgresql-table-design/SKILL.md"
   },
   {
     "name": "project-architecture",
     "description": "Comprehensive guide to BuildingAI monorepo structure, packages, and development patterns. Use this skill when you need to:",
     "type": "domain",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "project",
@@ -841,6 +855,7 @@
       "schema",
       "implementation"
     ],
+    "scripts": [],
     "references": [
       "ai-sdk",
       "api",
@@ -866,12 +881,14 @@
       "web",
       "wechat-sdk"
     ],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/project-architecture/SKILL.md"
   },
   {
     "name": "skill-creator",
     "description": "This skill provides guidance for creating effective skills. Skills are modular, self-contained packages that extend Claude's capabilities by providing",
     "type": "domain",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "skill",
@@ -1102,16 +1119,32 @@
       "your",
       "helps"
     ],
+    "scripts": [
+      {
+        "name": "init_skill",
+        "type": "python"
+      },
+      {
+        "name": "package_skill",
+        "type": "python"
+      },
+      {
+        "name": "quick_validate",
+        "type": "python"
+      }
+    ],
     "references": [
       "output-patterns",
       "workflows"
     ],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/skill-creator/SKILL.md"
   },
   {
     "name": "skill-developer",
     "description": "Comprehensive guide for creating and managing skills in Claude Code with auto-activation system, following Anthropic's official best practices including the 500-line rule and progressive disclosure",
     "type": "domain",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "skill",
@@ -1447,13 +1480,16 @@
       "stop",
       "event"
     ],
+    "scripts": [],
     "references": [],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/skill-developer/SKILL.md"
   },
   {
     "name": "skill-writer",
     "description": "This Skill helps you create well-structured Agent Skills for Claude Code that follow best practices",
     "type": "domain",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "skill",
@@ -1641,13 +1677,16 @@
       "multi",
       "processing"
     ],
+    "scripts": [],
     "references": [],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/skill-writer/SKILL.md"
   },
   {
     "name": "web-artifacts-builder",
     "description": "To build powerful frontend claude.ai artifacts, follow these steps: 1. Initialize the frontend repo using `scripts/init-artifact.sh`",
     "type": "domain",
+    "tags": [],
     "priority": "medium",
     "keywords": [
       "web",
@@ -1717,7 +1756,22 @@
       "com",
       "docs"
     ],
+    "scripts": [
+      {
+        "name": "bundle-artifact",
+        "type": "bash"
+      },
+      {
+        "name": "init-artifact",
+        "type": "bash"
+      },
+      {
+        "name": "shadcn-components.tar",
+        "type": "unknown"
+      }
+    ],
     "references": [],
+    "assets": [],
     "filePath": "/buildingai/packages/api/skills/web-artifacts-builder/SKILL.md"
   }
 ]
