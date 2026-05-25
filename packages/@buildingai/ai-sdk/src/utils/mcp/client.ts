@@ -3,12 +3,6 @@ import { Experimental_StdioMCPTransport } from "@ai-sdk/mcp/mcp-stdio";
 
 import type { CreateMcpClientOptions, McpClient, McpToolInfo } from "./types";
 
-/**
- * 创建 MCP 客户端
- *
- * @param options 客户端创建选项
- * @returns MCP 客户端实例
- */
 export async function createMcpClient(options: CreateMcpClientOptions): Promise<McpClient> {
     const { transport, name, version } = options;
 
