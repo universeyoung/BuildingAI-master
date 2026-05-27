@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "../typeorm";
 import { Agent } from "./ai-agent.entity";
+import { ScheduledTaskRun } from "./scheduled-task-run.entity";
 import { User } from "./user.entity";
  
 export interface ScheduledTaskAdvancedSettings {
@@ -19,65 +20,63 @@ export class ScheduledTask {
   id: string;
  
   @Index()
-  @Column({ length: 100, comment: "任务名称" })
+  @Column({ length: 100, name: "name", comment: "任务名称" })
   name: string;
- 
-  @Column({ type: "text", nullable: true, comment: "提示词" })
+
+  @Column({ type: "text", nullable: true, name: "prompt", comment: "提示词" })
   prompt: string;
- 
-  @Column({ type: "uuid", comment: "智能体ID" })
+
+  @Column({ type: "uuid", name: "agentId", comment: "智能体ID" })
   agentId: string;
- 
+
   @ManyToOne(() => Agent, { nullable: true })
   @JoinColumn({ name: "agentId" })
   agent: Agent;
- 
-  @Column({ type: "varchar", length: 20, default: "new", comment: "会话模式: new=新建会话, continue=继续历史会话" })
+
+  @Column({ type: "varchar", length: 20, default: "new", name: "conversationMode", comment: "会话模式: new=新建会话, continue=继续历史会话" })
   conversationMode: "new" | "continue";
- 
-  @Column({ type: "uuid", nullable: true, comment: "继续会话时指定的会话ID" })
+
+  @Column({ type: "uuid", nullable: true, name: "conversationId", comment: "继续会话时指定的会话ID" })
   conversationId: string;
- 
-  @Column({ length: 100, comment: "Cron 表达式" })
+
+  @Column({ length: 100, name: "cronExpression", comment: "Cron 表达式" })
   cronExpression: string;
- 
-  @Column({ type: "boolean", default: true, comment: "是否启用" })
+
+  @Column({ type: "boolean", default: true, name: "isEnabled", comment: "是否启用" })
   isEnabled: boolean;
- 
-  @Column({ type: "json", nullable: true, comment: "高级设置" })
+
+  @Column({ type: "json", nullable: true, name: "advancedSettings", comment: "高级设置" })
   advancedSettings: ScheduledTaskAdvancedSettings;
- 
-  @Column({ type: "timestamptz", nullable: true })
+
+  @Column({ type: "timestamptz", nullable: true, name: "lastRunAt" })
   lastRunAt: Date;
- 
-  @Column({ type: "timestamptz", nullable: true })
+
+  @Column({ type: "timestamptz", nullable: true, name: "nextRunAt" })
   nextRunAt: Date;
- 
-  @Column({ type: "int", default: 0, comment: "总执行次数" })
+
+  @Column({ type: "int", default: 0, name: "totalRunCount", comment: "总执行次数" })
   totalRunCount: number;
- 
-  @Column({ type: "int", default: 0, comment: "失败次数" })
+
+  @Column({ type: "int", default: 0, name: "failCount", comment: "失败次数" })
   failCount: number;
- 
+
   @Index()
-  @Column({ type: "uuid" })
+  @Column({ type: "uuid", name: "userId" })
   userId: string;
- 
+
   @ManyToOne(() => User)
   @JoinColumn({ name: "userId" })
   user: User;
- 
-  @CreateDateColumn({ type: "timestamptz" })
+
+  @CreateDateColumn({ type: "timestamptz", name: "createdAt" })
   createdAt: Date;
- 
-  @UpdateDateColumn({ type: "timestamptz" })
+
+  @UpdateDateColumn({ type: "timestamptz", name: "updatedAt" })
   updatedAt: Date;
- 
-  @DeleteDateColumn({ type: "timestamptz", nullable: true })
+
+  @DeleteDateColumn({ type: "timestamptz", nullable: true, name: "deletedAt" })
   deletedAt: Date;
- 
+
   @OneToMany(() => ScheduledTaskRun, (run) => run.task)
   runs: ScheduledTaskRun[];
 }
- 
-import { ScheduledTaskRun } from "./scheduled-task-run.entity";

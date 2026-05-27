@@ -96,6 +96,24 @@ function formatTime(dateStr: string | null): string {
   }
 }
 
+function formatFutureTime(dateStr: string | null): string {
+  if (!dateStr) return "-";
+
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+
+    return date.toLocaleString("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 export default function ScheduledTaskListPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -207,14 +225,22 @@ export default function ScheduledTaskListPage() {
         ) : tasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Clock className="text-muted-foreground/50 size-16" />
-            <p className="text-muted-foreground mt-4 text-lg">暂无定时任务</p>
-            <p className="text-muted-foreground mt-1 text-sm">创建你的第一个定时任务吧</p>
-            <Button className="mt-6" asChild>
-              <Link to="/tasks/new">
-                <Plus className="size-4" />
-                创建任务
-              </Link>
-            </Button>
+            <p className="text-muted-foreground mt-4 text-lg">
+              {statusFilter === "enabled" && "没有已启用的定时任务"}
+              {statusFilter === "disabled" && "没有已禁用的定时任务"}
+              {statusFilter === "all" && "暂无定时任务"}
+            </p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {statusFilter === "all" ? "创建你的第一个定时任务吧" : "试试切换其他筛选条件"}
+            </p>
+            {statusFilter === "all" && (
+              <Button className="mt-6" asChild>
+                <Link to="/tasks/new">
+                  <Plus className="size-4" />
+                  创建任务
+                </Link>
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -245,7 +271,7 @@ export default function ScheduledTaskListPage() {
                         size="icon-sm"
                         variant="outline"
                         onClick={() => handleRun(task)}
-                        disabled={runMutation.isPending}
+                        disabled={runMutation.isPending || !task.isEnabled}
                         title="立即执行"
                       >
                         <Play className="size-4" />
@@ -297,7 +323,7 @@ export default function ScheduledTaskListPage() {
 
                   <div className="text-muted-foreground mt-2 flex items-center gap-4 text-xs">
                     <span>上次运行: {formatTime(task.lastRunAt)}</span>
-                    <span>下次运行: {formatTime(task.nextRunAt)}</span>
+                    <span>下次运行: {task.isEnabled ? formatFutureTime(task.nextRunAt) : "待启用"}</span>
                   </div>
                 </CardContent>
               </Card>

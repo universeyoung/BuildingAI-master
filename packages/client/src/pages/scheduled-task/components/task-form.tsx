@@ -15,10 +15,12 @@ import {
 import {
   useCreateScheduledTaskMutation,
   useUpdateScheduledTaskMutation,
-  useConversationsQuery,
+  useAgentConversationsQuery,
   useMyAgentsInfiniteQuery,
   type ScheduledTask,
 } from "@buildingai/services/web";
+
+import type { AgentChatRecord } from "@buildingai/db/entities";
 import { Loader2 } from "lucide-react";
 import { CronPicker } from "./cron-picker";
 import { AdvancedSettings } from "./advanced-settings";
@@ -60,14 +62,15 @@ export function TaskForm({ mode, defaultValues, taskId }: TaskFormProps) {
     return agentsData.pages.flatMap((page) => page.items);
   }, [agentsData]);
  
-  const { data: conversationsData, isLoading: isConversationsLoading } = useConversationsQuery(
+  const { data: conversationsData, isLoading: isConversationsLoading } = useAgentConversationsQuery(
+    agentId || undefined,
     { page: 1, pageSize: PAGE_SIZE },
-    { enabled: conversationMode === "continue" },
+    { enabled: conversationMode === "continue" && !!agentId },
   );
- 
+
   const conversations = useMemo(() => {
     if (!conversationsData?.items) return [];
-    return conversationsData.items;
+    return (conversationsData.items as AgentChatRecord[]);
   }, [conversationsData]);
  
   const createMutation = useCreateScheduledTaskMutation();
@@ -116,7 +119,7 @@ export function TaskForm({ mode, defaultValues, taskId }: TaskFormProps) {
           {
             onSuccess: () => {
               toast.success("任务已保存");
-              navigate("/scheduled-task");
+              navigate("/tasks");
             },
             onError: () => {
               toast.error("保存失败，请重试");
@@ -129,7 +132,7 @@ export function TaskForm({ mode, defaultValues, taskId }: TaskFormProps) {
           {
             onSuccess: () => {
               toast.success("任务已创建");
-              navigate("/scheduled-task");
+              navigate("/tasks");
             },
             onError: () => {
               toast.error("创建失败，请重试");
@@ -243,7 +246,7 @@ export function TaskForm({ mode, defaultValues, taskId }: TaskFormProps) {
                   ) : (
                     conversations.map((conv) => (
                       <SelectItem key={conv.id} value={conv.id}>
-                        {conv.title || "未命名会话"}
+                        {conv.title || "未命名会话"} · {new Date(conv.createdAt).toLocaleDateString("zh-CN")}
                       </SelectItem>
                     ))
                   )}
@@ -292,20 +295,11 @@ export function TaskForm({ mode, defaultValues, taskId }: TaskFormProps) {
       <div className="flex gap-3 pt-4">
         <Button
           type="button"
-          onClick={() => handleSubmit(false)}
-          disabled={isSubmitting}
-        >
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {mode === "create" ? "创建任务" : "保存"}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
           onClick={() => handleSubmit(true)}
           disabled={isSubmitting}
         >
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {mode === "create" ? "创建任务" : "保存并启用"}
+          {mode === "create" ? "创建任务" : "保存"}
         </Button>
         <Button
           type="button"

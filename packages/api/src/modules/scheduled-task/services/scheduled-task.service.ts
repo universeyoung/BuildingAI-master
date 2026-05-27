@@ -1,7 +1,7 @@
 import { BaseService, PaginationResult } from "@buildingai/base";
 import { InjectRepository } from "@buildingai/db/@nestjs/typeorm";
 import { Agent, ScheduledTask, ScheduledTaskRun } from "@buildingai/db/entities";
-import { FindManyOptions, ILike, Repository } from "@buildingai/db/typeorm";
+import { ILike, Repository } from "@buildingai/db/typeorm";
 import { HttpErrorFactory } from "@buildingai/errors";
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
  
@@ -14,7 +14,7 @@ import { ScheduledTaskSchedulerService } from "./scheduled-task-scheduler.servic
  
 @Injectable()
 export class ScheduledTaskService extends BaseService<ScheduledTask> {
-  private readonly logger = new Logger(ScheduledTaskService.name);
+  private readonly svcLogger = new Logger(ScheduledTaskService.name);
  
   constructor(
     @InjectRepository(ScheduledTask)
@@ -67,7 +67,7 @@ export class ScheduledTaskService extends BaseService<ScheduledTask> {
       this.schedulerService.register(saved);
     }
  
-    this.logger.log(`Task "${saved.name}" (${saved.id}) created by user ${userId}`);
+    this.svcLogger.log(`Task "${saved.name}" (${saved.id}) created by user ${userId}`);
  
     return saved;
   }
@@ -121,7 +121,7 @@ export class ScheduledTaskService extends BaseService<ScheduledTask> {
       }
     }
  
-    this.logger.log(`Task "${saved.name}" (${saved.id}) updated`);
+    this.svcLogger.log(`Task "${saved.name}" (${saved.id}) updated`);
  
     return saved;
   }
@@ -141,7 +141,7 @@ export class ScheduledTaskService extends BaseService<ScheduledTask> {
       this.schedulerService.unregister(saved.id);
     }
  
-    this.logger.log(`Task "${saved.name}" (${saved.id}) ${isEnabled ? "enabled" : "disabled"}`);
+    this.svcLogger.log(`Task "${saved.name}" (${saved.id}) ${isEnabled ? "enabled" : "disabled"}`);
  
     return saved;
   }
@@ -151,10 +151,14 @@ export class ScheduledTaskService extends BaseService<ScheduledTask> {
     if (!task) {
       throw HttpErrorFactory.notFound("定时任务不存在");
     }
+
+    if (!task.isEnabled) {
+      throw HttpErrorFactory.badRequest("任务已禁用，请先启用后再运行");
+    }
  
     const run = await this.executorService.execute(task);
  
-    this.logger.log(`Task "${task.name}" (${task.id}) manually triggered by user ${userId}`);
+    this.svcLogger.log(`Task "${task.name}" (${task.id}) manually triggered by user ${userId}`);
  
     return run;
   }
@@ -183,7 +187,8 @@ export class ScheduledTaskService extends BaseService<ScheduledTask> {
     }, {
       where,
       order: { createdAt: "DESC" },
-    } as FindManyOptions<ScheduledTask>);
+      relations: ["agent"],
+    });
   }
  
   async paginateRuns(

@@ -126,7 +126,7 @@ import { AgentsService } from "./services/agents.service";
         AiMcpToolService,
         AiSkillToolService,
     ],
-    exports: [AgentsService],
+    exports: [AgentsService, AgentChatCompletionService],
 })
 export class AiAgentsModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {

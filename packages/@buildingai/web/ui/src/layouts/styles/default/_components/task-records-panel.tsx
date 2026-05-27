@@ -29,14 +29,14 @@ function StatusIcon({ status }: { status: ScheduledTaskRun["status"] }) {
   return <Icon className={cn("size-3.5 shrink-0", className)} />;
 }
  
-function TaskRunItem({ run }: { run: ScheduledTaskRun }) {
+function TaskRunItem({ run, agentId }: { run: ScheduledTaskRun; agentId: string }) {
   const navigate = useNavigate();
- 
+
   return (
     <button
       type="button"
       className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
-      onClick={() => navigate(`/c/${run.chatConversationId}`)}
+      onClick={() => navigate(`/agents/${agentId}/c/${run.chatConversationId}`)}
     >
       <StatusIcon status={run.status} />
       <span className="line-clamp-1 flex-1 text-xs text-muted-foreground">
@@ -51,7 +51,7 @@ function TaskRunItem({ run }: { run: ScheduledTaskRun }) {
   );
 }
  
-function TaskGroup({ taskId, taskName }: { taskId: string; taskName: string }) {
+function TaskGroup({ taskId, taskName, agentId }: { taskId: string; taskName: string; agentId: string }) {
   const [expanded, setExpanded] = useState(false);
  
   const { data, isLoading } = useScheduledTaskRunsQuery(
@@ -86,7 +86,7 @@ function TaskGroup({ taskId, taskName }: { taskId: string; taskName: string }) {
             <p className="px-2 py-2 text-xs text-muted-foreground">暂无执行记录</p>
           ) : (
             data?.items.map((run) => (
-              <TaskRunItem key={run.id} run={run} />
+              <TaskRunItem key={run.id} run={run} agentId={agentId} />
             ))
           )}
         </div>
@@ -110,7 +110,7 @@ export function TaskRecordsPanel({ className }: { className?: string }) {
             <p className="py-8 text-center text-sm text-muted-foreground">暂无定时任务</p>
           ) : (
             data?.items.map((task) => (
-              <TaskGroup key={task.id} taskId={task.id} taskName={task.name} />
+              <TaskGroup key={task.id} taskId={task.id} taskName={task.name} agentId={task.agentId} />
             ))
           )}
         </div>

@@ -1,6 +1,5 @@
 import { Input } from "@buildingai/ui/components/ui/input";
 import { Label } from "@buildingai/ui/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@buildingai/ui/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -16,72 +15,78 @@ import {
   validateCronExpression,
 } from "@/pages/scheduled-task/utils/cron-parser";
 
-type CronMode = "simple" | "cron";
-type Frequency = "daily" | "weekly" | "hourly" | "custom";
+type ScheduleMode = "once" | "repeat" | "interval";
 
 const DAY_OPTIONS = [
-  { value: "0", label: "周日" },
-  { value: "1", label: "周一" },
-  { value: "2", label: "周二" },
-  { value: "3", label: "周三" },
-  { value: "4", label: "周四" },
-  { value: "5", label: "周五" },
-  { value: "6", label: "周六" },
+  { value: "1", label: "一" },
+  { value: "2", label: "二" },
+  { value: "3", label: "三" },
+  { value: "4", label: "四" },
+  { value: "5", label: "五" },
+  { value: "6", label: "六" },
+  { value: "0", label: "日" },
 ];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
-function detectCronMode(expr: string): {
-  mode: CronMode;
-  frequency?: Frequency;
-  hour?: string;
-  minute?: string;
-  day?: string;
-  interval?: string;
-} {
-  if (!expr || !validateCronExpression(expr)) return { mode: "cron" };
-
+function detectMode(expr: string): ScheduleMode {
+  if (!expr || !validateCronExpression(expr)) return "repeat";
   const parts = expr.trim().split(/\s+/);
-  if (parts.length !== 5) return { mode: "cron" };
-
+  if (parts.length !== 5) return "repeat";
   const [minute, hour, dom, month, dow] = parts;
+  if (dom !== "*" && month !== "*" && dow === "*") return "once";
+  if (dow.includes(",")) return "repeat";
+  if (minute.includes("*/") || hour.includes("*/")) return "interval";
+  return "repeat";
+}
 
-  if (month !== "*") return { mode: "cron" };
+function buildOnceCron(date: string, time: string): string {
+  if (!date || !time) return "";
+  const [y, m, d] = date.split("-");
+  const [hh, mm] = time.split(":");
+  return `${mm} ${hh} ${parseInt(d)} ${parseInt(m)} *`;
+}
 
-  // 每小时: "0 */{n} * * *" or "0 * * * *" (every hour)
-  if (minute === "0" && hour.startsWith("*/") && dom === "*" && dow === "*") {
-    return { mode: "simple", frequency: "hourly", interval: hour.replace("*/", ""), minute: "00" };
-  }
-  if (minute === "0" && hour === "*" && dom === "*" && dow === "*") {
-    return { mode: "simple", frequency: "hourly", interval: "1", minute: "00" };
-  }
+function buildRepeatCron(days: string[], time: string): string {
+  if (days.length === 0 || !time) return "";
+  const [hh, mm] = time.split(":");
+  const dow = days.sort().join(",");
+  return `${mm} ${hh} * * ${dow}`;
+}
 
-  // 每天: "0 {hour} * * *" or "{min} {hour} * * *"
-  if (
-    dom === "*" &&
-    dow === "*" &&
-    !hour.includes("/") &&
-    !hour.includes(",") &&
-    !hour.includes("-")
-  ) {
-    return { mode: "simple", frequency: "daily", hour, minute };
-  }
+function buildIntervalCron(unit: "minute" | "hour", value: number): string {
+  if (value < 1) value = 1;
+  if (unit === "minute") return `*/${value} * * * *`;
+  return `0 */${value} * * *`;
+}
 
-  // 每周: "0 {hour} * * {day}"
-  if (
-    dom === "*" &&
-    !dow.includes(",") &&
-    !dow.includes("-") &&
-    !dow.includes("/") &&
-    !hour.includes("/") &&
-    !hour.includes(",") &&
-    !hour.includes("-")
-  ) {
-    return { mode: "simple", frequency: "weekly", hour, minute, day: dow };
-  }
+function parseOnceFromCron(expr: string): { date: string; time: string } {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5) return { date: "", time: "08:00" };
+  const [mm, hh, dom, month] = parts;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(parseInt(month)).padStart(2, "0");
+  const d = String(parseInt(dom)).padStart(2, "0");
+  return { date: `${y}-${m}-${d}`, time: `${hh.padStart(2, "0")}:${mm.padStart(2, "0")}` };
+}
 
-  return { mode: "cron" };
+function parseRepeatFromCron(expr: string): { days: string[]; time: string } {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5) return { days: ["1"], time: "08:00" };
+  const [mm, hh, , , dow] = parts;
+  const days = dow.split(",").filter(Boolean);
+  return { days, time: `${hh.padStart(2, "0")}:${mm.padStart(2, "0")}` };
+}
+
+function parseIntervalFromCron(expr: string): { unit: "minute" | "hour"; value: number } {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5) return { unit: "hour", value: 1 };
+  const [mm, hh] = parts;
+  if (mm.startsWith("*/")) return { unit: "minute", value: parseInt(mm.slice(2)) || 1 };
+  if (hh.startsWith("*/")) return { unit: "hour", value: parseInt(hh.slice(2)) || 1 };
+  return { unit: "hour", value: 1 };
 }
 
 export interface CronPickerProps {
@@ -91,231 +96,223 @@ export interface CronPickerProps {
 }
 
 export function CronPicker({ value, onChange, disabled }: CronPickerProps) {
-  const detected = useMemo(() => detectCronMode(value), [value]);
-  const [mode, setMode] = useState<CronMode>(detected.mode);
-  const [frequency, setFrequency] = useState<Frequency>(detected.frequency ?? "daily");
-  const [hour, setHour] = useState(detected.hour ?? "08");
-  const [minute, setMinute] = useState(detected.minute ?? "00");
-  const [day, setDay] = useState(detected.day ?? "1");
-  const [interval, setInterval] = useState(detected.interval ?? "1");
-  const [cronInput, setCronInput] = useState(mode === "cron" ? value : "");
+  const detectedMode = useMemo(() => detectMode(value), [value]);
+  const [mode, setMode] = useState<ScheduleMode>(detectedMode);
+
+  const onceParsed = useMemo(() => parseOnceFromCron(value), [value]);
+  const repeatParsed = useMemo(() => parseRepeatFromCron(value), [value]);
+  const intervalParsed = useMemo(() => parseIntervalFromCron(value), [value]);
+
+  const [onceDate, setOnceDate] = useState(onceParsed.date);
+  const [onceTime, setOnceTime] = useState(onceParsed.time || "08:00");
+  const [repeatDays, setRepeatDays] = useState<string[]>(repeatParsed.days.length > 0 ? repeatParsed.days : ["1"]);
+  const [repeatTime, setRepeatTime] = useState(repeatParsed.time || "08:00");
+  const [intervalUnit, setIntervalUnit] = useState<"minute" | "hour">(intervalParsed.unit);
+  const [intervalValue, setIntervalValue] = useState(intervalParsed.value);
 
   useEffect(() => {
-    const d = detectCronMode(value);
-    if (d.mode === "cron") {
-      setMode("cron");
-      setCronInput(value);
+    const m = detectMode(value);
+    if (m === "once") {
+      const p = parseOnceFromCron(value);
+      setOnceDate(p.date);
+      setOnceTime(p.time);
+    } else if (m === "repeat") {
+      const p = parseRepeatFromCron(value);
+      setRepeatDays(p.days.length > 0 ? p.days : ["1"]);
+      setRepeatTime(p.time);
     } else {
-      setMode("simple");
-      setFrequency(d.frequency ?? "daily");
-      setHour(d.hour ?? "08");
-      setMinute(d.minute ?? "00");
-      setDay(d.day ?? "1");
-      setInterval(d.interval ?? "1");
+      const p = parseIntervalFromCron(value);
+      setIntervalUnit(p.unit);
+      setIntervalValue(p.value);
     }
   }, [value]);
 
-  const buildCron = (freq: Frequency, h: string, m: string, d: string, n: string): string => {
-    switch (freq) {
-      case "daily":
-        return `${m} ${h} * * *`;
-      case "weekly":
-        return `${m} ${h} * * ${d}`;
-      case "hourly":
-        return `0 */${n} * * *`;
-      case "custom":
-        return cronInput || "0 8 * * *";
-      default:
-        return "0 8 * * *";
-    }
-  };
-
-  const emit = (freq: Frequency, h: string, m: string, d: string, n: string) => {
-    onChange(buildCron(freq, h, m, d, n));
-  };
-
-  const handleModeChange = (newMode: CronMode) => {
-    setMode(newMode);
-    if (newMode === "cron") {
-      setCronInput(buildCron(frequency, hour, minute, day, interval));
-      onChange(buildCron(frequency, hour, minute, day, interval));
+  useEffect(() => {
+    let cron = "";
+    if (mode === "once") {
+      cron = buildOnceCron(onceDate, onceTime);
+    } else if (mode === "repeat") {
+      cron = buildRepeatCron(repeatDays, repeatTime);
     } else {
-      const d = detectCronMode(cronInput || value);
-      if (d.mode === "simple") {
-        setFrequency(d.frequency ?? "daily");
-        setHour(d.hour ?? "08");
-        setMinute(d.minute ?? "00");
-        setDay(d.day ?? "1");
-        setInterval(d.interval ?? "1");
-        onChange(
-          buildCron(
-            d.frequency ?? "daily",
-            d.hour ?? "08",
-            d.minute ?? "00",
-            d.day ?? "1",
-            d.interval ?? "1",
-          ),
-        );
-      }
+      cron = buildIntervalCron(intervalUnit, intervalValue);
     }
-  };
+    if (cron && cron !== value) {
+      onChange(cron);
+    }
+  }, [mode, onceDate, onceTime, repeatDays, repeatTime, intervalUnit, intervalValue]);
 
-  const cronValid = useMemo(() => {
-    if (mode === "simple") return true;
-    return cronInput ? validateCronExpression(cronInput) : true;
-  }, [mode, cronInput]);
+  const toggleDay = (dayValue: string) => {
+    setRepeatDays((prev) => {
+      if (prev.includes(dayValue)) {
+        return prev.filter((d) => d !== dayValue);
+      }
+      return [...prev, dayValue].sort();
+    });
+  };
 
   const preview = useMemo(() => {
-    const expr = mode === "simple" ? buildCron(frequency, hour, minute, day, interval) : cronInput;
+    let expr = "";
+    if (mode === "once") expr = buildOnceCron(onceDate, onceTime);
+    else if (mode === "repeat") expr = buildRepeatCron(repeatDays, repeatTime);
+    else expr = buildIntervalCron(intervalUnit, intervalValue);
     if (!expr) return "";
     try {
       return cronToHumanReadable(expr);
     } catch {
       return expr;
     }
-  }, [mode, frequency, hour, minute, day, interval, cronInput]);
+  }, [mode, onceDate, onceTime, repeatDays, repeatTime, intervalUnit, intervalValue]);
+
+  const modeOptions: { value: ScheduleMode; label: string }[] = [
+    { value: "once", label: "单次" },
+    { value: "repeat", label: "重复" },
+    { value: "interval", label: "间隔" },
+  ];
 
   return (
     <div className="space-y-4">
-      <RadioGroup
-        value={mode}
-        onValueChange={(v) => handleModeChange(v as CronMode)}
-        className="flex gap-6"
-        disabled={disabled}
-      >
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="simple" id="cron-simple" />
-          <Label htmlFor="cron-simple" className="cursor-pointer">
-            简单模式
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="cron" id="cron-advanced" />
-          <Label htmlFor="cron-advanced" className="cursor-pointer">
-            Cron 表达式
-          </Label>
-        </div>
-      </RadioGroup>
-
-      {mode === "simple" ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Select
-            value={frequency}
-            onValueChange={(v) => {
-              setFrequency(v as Frequency);
-              emit(v as Frequency, hour, minute, day, interval);
-            }}
+      <div className="flex gap-2">
+        {modeOptions.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            className={cn(
+              "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+              mode === opt.value
+                ? "bg-primary text-primary-foreground"
+                : "bg-accent text-accent-foreground hover:bg-accent/80",
+            )}
+            onClick={() => !disabled && setMode(opt.value)}
             disabled={disabled}
           >
-            <SelectTrigger className="w-28">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">每天</SelectItem>
-              <SelectItem value="weekly">每周</SelectItem>
-              <SelectItem value="hourly">每小时</SelectItem>
-            </SelectContent>
-          </Select>
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
-          {frequency === "hourly" ? (
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">间隔</span>
-              <Input
-                type="number"
-                min={1}
-                max={23}
-                value={interval}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, "") || "1";
-                  setInterval(v);
-                  emit(frequency, hour, minute, day, v);
-                }}
-                className="w-20"
-                disabled={disabled}
-              />
-              <span className="text-muted-foreground text-sm">小时</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Select
-                value={hour}
-                onValueChange={(v) => {
-                  setHour(v);
-                  emit(frequency, v, minute, day, interval);
-                }}
-                disabled={disabled}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {HOURS.map((h) => (
-                    <SelectItem key={h} value={h}>
-                      {h}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-sm">:</span>
-              <Select
-                value={minute}
-                onValueChange={(v) => {
-                  setMinute(v);
-                  emit(frequency, hour, v, day, interval);
-                }}
-                disabled={disabled}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MINUTES.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {frequency === "weekly" && (
-            <Select
-              value={day}
-              onValueChange={(v) => {
-                setDay(v);
-                emit(frequency, hour, minute, v, interval);
-              }}
+      {mode === "once" && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm whitespace-nowrap">日期</Label>
+            <Input
+              type="date"
+              value={onceDate}
+              onChange={(e) => setOnceDate(e.target.value)}
+              className="w-40"
               disabled={disabled}
-            >
-              <SelectTrigger className="w-24">
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm whitespace-nowrap">时间</Label>
+            <Select value={onceTime.split(":")[0]} onValueChange={(v) => setOnceTime(`${v}:${onceTime.split(":")[1] || "00"}`)} disabled={disabled}>
+              <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {DAY_OPTIONS.map((d) => (
-                  <SelectItem key={d.value} value={d.value}>
-                    {d.label}
-                  </SelectItem>
+                {HOURS.map((h) => (
+                  <SelectItem key={h} value={h}>{h}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          )}
+            <span>:</span>
+            <Select value={onceTime.split(":")[1] || "00"} onValueChange={(v) => setOnceTime(`${onceTime.split(":")[0] || "08"}:${v}`)} disabled={disabled}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MINUTES.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      ) : (
-        <Input
-          value={cronInput}
-          onChange={(e) => {
-            setCronInput(e.target.value);
-            onChange(e.target.value);
-          }}
-          placeholder="0 8 * * *"
-          className={cn("font-mono", cronInput && !cronValid && "border-destructive")}
-          disabled={disabled}
-        />
+      )}
+
+      {mode === "repeat" && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm whitespace-nowrap">每周</Label>
+            <div className="flex gap-1.5">
+              {DAY_OPTIONS.map((d) => (
+                <button
+                  key={d.value}
+                  type="button"
+                  className={cn(
+                    "size-9 rounded-md text-sm font-medium transition-colors",
+                    repeatDays.includes(d.value)
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-accent text-accent-foreground hover:bg-accent/80",
+                  )}
+                  onClick={() => toggleDay(d.value)}
+                  disabled={disabled}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm whitespace-nowrap">时间</Label>
+            <Select value={repeatTime.split(":")[0]} onValueChange={(v) => setRepeatTime(`${v}:${repeatTime.split(":")[1] || "00"}`)} disabled={disabled}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {HOURS.map((h) => (
+                  <SelectItem key={h} value={h}>{h}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span>:</span>
+            <Select value={repeatTime.split(":")[1] || "00"} onValueChange={(v) => setRepeatTime(`${repeatTime.split(":")[0] || "08"}:${v}`)} disabled={disabled}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MINUTES.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {mode === "interval" && (
+        <div className="flex items-center gap-3">
+          <Label className="text-sm whitespace-nowrap">每</Label>
+          <Input
+            type="number"
+            min={1}
+            max={intervalUnit === "minute" ? 59 : 23}
+            value={intervalValue}
+            onChange={(e) => {
+              const v = parseInt(e.target.value) || 1;
+              setIntervalValue(v);
+            }}
+            className="w-20"
+            disabled={disabled}
+          />
+          <Select
+            value={intervalUnit}
+            onValueChange={(v) => setIntervalUnit(v as "minute" | "hour")}
+            disabled={disabled}
+          >
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="minute">分钟</SelectItem>
+              <SelectItem value="hour">小时</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-muted-foreground text-sm">执行一次</span>
+        </div>
       )}
 
       {preview && (
-        <p className={cn("text-sm", cronValid ? "text-muted-foreground" : "text-destructive")}>
+        <p className="text-sm text-muted-foreground">
           执行计划：{preview}
         </p>
       )}

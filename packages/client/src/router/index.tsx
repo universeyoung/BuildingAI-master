@@ -29,6 +29,7 @@ import AlipayReturnPage from "../pages/payment/alipay-return";
 import ScheduledTaskListPage from "@/pages/scheduled-task";
 import ScheduledTaskCreatePage from "@/pages/scheduled-task/create";
 import ScheduledTaskEditPage from "@/pages/scheduled-task/edit";
+import ScheduledTaskRunsPage from "@/pages/scheduled-task/runs";
 
 export const router = createBrowserRouter([
   {
@@ -162,6 +163,10 @@ export const router = createBrowserRouter([
           {
             path: "/tasks/:id/edit",
             element: <ScheduledTaskEditPage />,
+          },
+          {
+            path: "/tasks/:taskId/runs",
+            element: <ScheduledTaskRunsPage />,
           },
           {
             path: "*",
