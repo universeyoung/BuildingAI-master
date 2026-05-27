@@ -1,0 +1,14 @@
+"tool_name: skill_finder\ntool_desc: Find, search, recommend, and install agent skills\
+  \ from the internal catalog, skills.sh, ClawHub, and SkillsMP — all in one place.\
+  \ Always consult this when user asks to find, search, discover, or choose skills,\
+  \ OR when the user already names a built-in skill they want to install. Use when\
+  \ user says \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\"\
+  , \"search all platforms\", \"best skill for X\", \"what skill should I use for\
+  \ X\", \"该用什么skill\", \"有没有XX的skill\", \"帮我找skill\", \"推荐一个skill\", or expresses\
+  \ interest in extending capabilities or choosing the right skill for a task. Also\
+  \ use when the user names a specific built-in skill to install or enable, e.g. \"\
+  install <skill-name>\", \"帮我安装XX技能\", \"给agent加上XX技能\", \"enable XX skill\", \"\
+  为agent配置XX技能\", \"把XX技能装上\".\ntool_type: internal\n\nparameters:\n  type: object\n\
+  \  properties:\n    query:\n      type: string\n      description: 查询内容\n  required:\n\
+  \    - query\n\ncall_config:\n  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n\
+  \  type: text\n"

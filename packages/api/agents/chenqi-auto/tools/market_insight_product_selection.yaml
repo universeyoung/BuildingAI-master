@@ -1,0 +1,14 @@
+"tool_name: market_insight_product_selection\ntool_desc: Adaptive product-selection\
+  \ methodology built on multi-source signals and \"voice of customer\" (VoC): validate\
+  \ demand, momentum, competitive intensity, and user pain points from reviews/comments\
+  \ to produce a confident shortlist or a focused go/no-go.\n**When to use**:\n  -\
+  \ User is asking about trends/popularity (Tiktok/Amazon/etc.), or what's selling\
+  \ well in a market (US/UK/etc.)\n  - User asks for **single-category / single-product**\
+  \ trend analysis\n  - User wants market analysis, market research, or competitive\
+  \ landscape insights\n  - User is researching consumer preferences, demand patterns,\
+  \ or market dynamics\n  - User needs help deciding what products to sell, source,\
+  \ or invest in\n  - User is exploring product opportunities, winning products, or\
+  \ profitable niches\n\ntool_type: internal\n\nparameters:\n  type: object\n  properties:\n\
+  \    query:\n      type: string\n      description: 查询内容\n  required:\n    - query\n\
+  \ncall_config:\n  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n\
+  \  type: text\n"

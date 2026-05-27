@@ -1,0 +1,10 @@
+"tool_name: chenqi_auto_translate\ntool_desc: 辰启-自动翻译 v0.2。从飞书「商品全生命周期」表 T_TODO 行中按\
+  \ 1688商品ID 聚合 1 个 SPU，整组迁移 T_DOING；两阶段 LLM（phase1 看 top3 类目骨架选 1 个 → phase2 拉对应字典填必填+加分项属性）；agent\
+  \ 输出俄语标题/描述/属性 JSON；finalize 入库 T_DONE 或 T_FAILED；SEO 缓存缺失时自动通过 browser sub-agent\
+  \ 爬 Ozon 预热。每次会话只跑 1 个 SPU（含 1~10 个 SKU 子行）。v0.2 解决 v0.1 两个问题：(1) 类目错位（BM25 词根歧义把音箱召到车载音响）；(2)\
+  \ 加分项被丢弃（一个类目应有 20-30 属性，v0.1 只填必填，丢搜索曝光）。当用户说「执行辰启-自动翻译」「跑下一个翻译」「翻译 T_TODO」「auto-translate」时触发。前置：(1)\
+  \ chenqi-lark-setup 已跑过且 base_info.json 存在；(2) chenqi-auto-collect 已写入 ≥1 条 T_TODO\
+  \ 翻译记录；(3) Python 3.10+；(4) lark-cli 当前账号绑定。\ntool_type: internal\n\nparameters:\n\
+  \  type: object\n  properties:\n    query:\n      type: string\n      description:\
+  \ 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n  method: POST\n\
+  \  timeout: 30\n\nresponse_format:\n  type: text\n"

@@ -1,0 +1,10 @@
+"# 智能体基础信息\nagent_meta:\n  agent_id: 辰启智能体\n  agent_name: 辰启智能体\n  agent_desc: # Identity\
+  \ - **Name**: 上架 - **Vibe**: professional\n  version: 1.0.0\n  create_time: 2026-05-26\n\
+  \  author: AccioWork\n\n# 大模型配置\nllm_config:\n  model_name: gpt-4o\n  base_url:\
+  \ https://api.openai.com/v1\n  temperature: 0.3\n  max_tokens: 4096\n  timeout:\
+  \ 30\n\n# 全局运行规则\nglobal_rules:\n  enable_stream: True\n  enable_tool_call: True\n\
+  \  enable_memory: True\n  max_chat_round: 20\n\n# 权限与安全\nsecurity:\n  forbidden_words:\
+  \ []\n  allow_external_api: True\n  permission_level: normal\n\n# 关联外部资源\nresource_ref:\n\
+  \  system_prompt_path: ./system_prompt.md\n  tools_dir: ./tools/\n  workflow_path:\
+  \ ./workflows/task_flow.yaml\n\n# 运行模式\nrun_mode:\n  mode: chat\n  auto_execute:\
+  \ false\n"

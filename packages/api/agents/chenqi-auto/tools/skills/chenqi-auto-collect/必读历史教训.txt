@@ -1,0 +1,7 @@
+详见 SKILL.md 七章节，重点：
+
+「商品属性」≠「包装信息」——pack 才是物流强制填，强可信
+单位智能推断：1688 商家漏小数点是常态（86 写成 8.6），数值 >50 时极可能错
+采集环节绝不调视觉——三围抓不到就 None 写飞书，留给下游核价
+Windows 反爬：60s 间隔串行，emoji 触发 GBK，sleep 用 powershell
+browser sub-agent：cat 读裸 JS（不要用 read 带行号），不 waitForLoadState networkidle，必须先 scroll 到底触发懒加载

@@ -1,0 +1,12 @@
+"tool_name: chenqi_lark_setup\ntool_desc: 辰启 v3.2.0 飞书多维表初始化与迁移工作流。一键创建跨境电商上架项目所需的\
+  \ 4 张飞书表（商品全生命周期 95 字段 / 失败事件流水 15 字段 / 批次仪表盘 22 字段 / 店铺账号池 11 字段，共 143 字段），写入 __SCHEMA__\
+  \ 元数据行，并生成下游 7 个技能复用的 base_info.json（含 base_token、table_id、字段名→field_id 映射、schema_version）。支持版本化迁移：老\
+  \ base 自动检测当前版本并按 migrations/ 中的标准脚本逐版升级（如 v3.1.0→v3.2.0 加店铺账号池表），具备三道幂等保护，跑半失败可断点续跑。同时提供\
+  \ add_shop.py 一站式录入 Ozon 店铺凭证（含 client_id / api_key / 配额 / 优先级），自动对齐 BJ 凌晨 03:00\
+  \ 的业务日切日规则（与 Ozon 配额刷新对齐）。零硬编码：base 由 lark-cli 动态创建，身份用 --as bot 自动绑定当前账号，可在任意新机器/新账号无缝复用。当用户说「执行辰启-飞书建表」「初始化飞书表」「重建多维表」「升级\
+  \ schema」「添加店铺凭证」「跑 chenqi-lark-setup」「飞书 base 一键建表」时触发。前置：(1) lark-cli 已安装且在 PATH（Windows\
+  \ 用 lark-cli.cmd）；(2) 当前账号已在 Accio 连接飞书（Connected Accounts）；(3) Python 3.10+。不适用于：非辰启项目的飞书初始化（字段写死为辰启业务表）；想往已有\
+  \ base 增量加单字段（直接 lark-cli +field-create 即可）。\ntool_type: internal\n\nparameters:\n\
+  \  type: object\n  properties:\n    query:\n      type: string\n      description:\
+  \ 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n  method: POST\n\
+  \  timeout: 30\n\nresponse_format:\n  type: text\n"

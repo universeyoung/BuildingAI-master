@@ -1,0 +1,8 @@
+"tool_name: docx\ntool_desc: Comprehensive document creation, editing, and analysis\
+  \ with support for tracked changes, comments, formatting preservation, and text\
+  \ extraction. Use when working with professional documents (.docx files) for: (1)\
+  \ Creating new documents, (2) Modifying or editing content, (3) Working with tracked\
+  \ changes, (4) Adding comments, or any other document tasks\ntool_type: internal\n\
+  \nparameters:\n  type: object\n  properties:\n    query:\n      type: string\n \
+  \     description: 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n\
+  \  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

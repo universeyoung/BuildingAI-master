@@ -1,0 +1,35 @@
+{
+  "skill_name": "ecommerce-marketing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I just launched a Shopify store selling handmade candles. I have no marketing experience. Where do I start?",
+      "expected_output": "Should recommend product-marketing-context as the first step, then suggest the beginner starter pack (5 skills). Should NOT overwhelm with all 22 skills. Should ask about budget/timeline/market.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I want to create an Instagram campaign for my new skincare product. Here's the product page: https://example.com/product",
+      "expected_output": "Should activate instagram-marketing + social-content in parallel, then copywriting for caption refinement, then social-media-publisher for posting. Should check if product-marketing-context exists first.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "My Google Ads are spending $500/day but I'm getting almost no sales. Help me figure out what's wrong.",
+      "expected_output": "Should start with page-cro for landing page audit, then ab-test-setup for experiments, then copywriting to apply quick wins. Should focus on available optimization skills.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "帮我推广产品到中国市场，我卖的是宠物用品",
+      "expected_output": "Should detect China market intent. Recommend company-research (check Exa API first) + competitive-landscape for research, then social-content with Chinese platform focus (小红书, 抖音).",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I need to write product descriptions for 50 products on my Amazon store",
+      "expected_output": "Should recommend product-description-generator as the primary skill (supports bulk generation). Should mention the bulk_generate.py script. May suggest copywriting for landing page copy as a follow-up.",
+      "files": []
+    }
+  ]
+}

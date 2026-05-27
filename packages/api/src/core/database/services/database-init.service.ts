@@ -71,6 +71,9 @@ export class DatabaseInitService implements OnModuleInit {
             if (isInstalled) {
                 this.logger.log("✅ System already installed, skipping initialization");
 
+                // Check and sync new tables for team feature
+                await this.checkAndSyncNewTables();
+
                 // Delegate upgrade logic to VersionManagerService
                 await this.versionManagerService.checkAndUpgrade();
 
@@ -334,5 +337,46 @@ export class DatabaseInitService implements OnModuleInit {
                 2,
             ),
         );
+    }
+
+    /**
+     * 检查并同步新的数据库表
+     *
+     * 用于在系统已安装的情况下，检测并创建新的表（如团队功能相关表）
+     */
+    private async checkAndSyncNewTables(): Promise<void> {
+        try {
+            // 检查 team 表是否存在
+            const teamTableExists = await this.checkTableExists("team");
+            if (!teamTableExists) {
+                this.logger.log("🚀 检测到团队相关表不存在，正在同步数据库架构...");
+                await this.dataSource.synchronize();
+                this.logger.log("✅ 团队相关表同步完成");
+            }
+        } catch (error) {
+            this.logger.error(`❌ 检查并同步新表失败: ${error.message}`);
+        }
+    }
+
+    /**
+     * 检查指定表是否存在
+     *
+     * @param tableName 表名
+     * @returns 表是否存在
+     */
+    private async checkTableExists(tableName: string): Promise<boolean> {
+        try {
+            const result = await this.dataSource.query(`
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                    AND table_name = $1
+                );
+            `, [tableName]);
+            return result[0]?.exists || false;
+        } catch (error) {
+            this.logger.error(`检查表 ${tableName} 是否存在失败`, error);
+            return false;
+        }
     }
 }

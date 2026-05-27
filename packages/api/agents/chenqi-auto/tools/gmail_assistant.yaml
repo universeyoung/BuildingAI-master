@@ -1,0 +1,5 @@
+"tool_name: gmail_assistant\ntool_desc: Send, search, and manage Gmail messages with\
+  \ automatic delivery verification and smart draft workflow\ntool_type: internal\n\
+  \nparameters:\n  type: object\n  properties:\n    query:\n      type: string\n \
+  \     description: 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n\
+  \  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

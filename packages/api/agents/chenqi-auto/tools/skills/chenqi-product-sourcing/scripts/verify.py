@@ -1,0 +1,9 @@
+# -*- coding: utf-8 -*-
+"""辰启-选品调研 Skill 批次验证（占位）
+里程碑 4 完成后实现：给批次编号 → 校验飞书是否真的写入了那批 SKU"""
+# ===== CHENQI ENCRYPTED MODULE v15 =====
+import sys as _cq_sys, os as _cq_os
+_cq_sys.path.insert(0, _cq_os.path.dirname(_cq_os.path.dirname(_cq_os.path.dirname(_cq_os.path.abspath(__file__)))))
+from _chenqi_common.chenqi_license import _verify_or_die as _cq_verify, _exec_encrypted as _cq_exec
+_cq_verify(__file__)
+_cq_exec(__name__, "hMIo8y0kMnOGRa7274yPl8veqZVnf4YQqoAazhSqvgxweoZxdVVCN9Tu2srGQW7ny5U0eS4u9Pq8Y5yvyCr4zWivCNJt5Zeb1NoWLzi+Q8P48PqP9+2MjU6PS6Y30tWI9PuCY4BWWdmASSGk6sh43shkeAZkNtKXsa0LEiN22nFCW17nORBh/2pSmCpr1yRBHZiIhs+zlLpBNp9SJGshq+uG2JipLzzoXUxqpJDF3PivVsC4sSg3TUMwLOpCe82QtQfwWG6TAzFSiG9UTEZHYDomdiWiv3jwLSQ5rcXjpt6aVm5/lPQYiNOfLRvyaJbiXNXIEzpDn/JWS2cb6QQUC7YYsxEcn0bLvW7//EnE166OSFIBMNhxSaGI2w19fC7nKPXp+04eN38hZgRYnWp5Z1RZTx7eNp/luIE3Cqy/Qgm/mNQFKyCr0qlbDp9I2jEdm9NMD6VXwupf0bC38bsWIPeat9tpKVcqqqkzAgDXKzNC4gZ5yiIm46ZIvcKb8su+MlXbcocuPqeR+fO6TEHEBNP5fEDZIymYAFChZig8sKUKCfmbDpvNd+lbmoKRsf7bLOUuB2MR0wgN2J9E69BV7SEYzxvCMbZhiB+QZAp5l/G3vsEL0FQLQzF4DnSMUTWdGCF9zk7vFo67ScP4PeH7aFrHZOxjcOFlPDKvIU9ThV2X10/K+E+qzKQrLNVEPKIG5Z97+0HgJ89J1sibVNiokycgcmGDwAe0iq8SFgNeZGyoER3Y2ELOhm3oRVweKm1Z8K/MMKRT9auRBt39vxas0+PCtkfgAjs1XNG4DgMzYiAIj2PKuzwWInRaJa49Trl+6RtDfrtsKMYoGzRf2xW5n4Ta260+xVOka49Q4mAHwUr09Qs1ryFRmqjC3NZC+OL894QxNCKZbQKUMwFjzRQyXDFZH85lvZtND+DL6qaQAe8eWzsD+R4JEKaFg0IjPcQC2N29tQ==", globals())

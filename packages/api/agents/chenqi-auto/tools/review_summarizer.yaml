@@ -1,0 +1,7 @@
+"tool_name: review_summarizer\ntool_desc: Scrape, analyze, and summarize product reviews\
+  \ from multiple platforms (Amazon, Google, Yelp, TripAdvisor). Extract key insights,\
+  \ sentiment analysis, pros/cons, and recommendations. Use when researching products\
+  \ for arbitrage, creating affiliate content, or making purchasing decisions.\ntool_type:\
+  \ internal\n\nparameters:\n  type: object\n  properties:\n    query:\n      type:\
+  \ string\n      description: 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path:\
+  \ \n  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

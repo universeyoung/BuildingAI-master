@@ -1,0 +1,10 @@
+"tool_name: chenqi_product_sourcing\ntool_desc: 辰启 v1.0 选品调研工作流（S_ 状态前缀）。从 1688 选出符合跨境上架条件的\
+  \ SKU，按状态机规范写入飞书「商品全生命周期」表，并通过置 `采集状态=C_TODO` 触发下游采集环节。3 种触发模式：(1) cron 定时任务（自然语言提示词解析为关键词/数量/价格区间/品类排除/店铺链接\
+  \ 5 维参数）；(2) 用户手动指令；(3) 兜底专业市场调研（俄区趋势 + Ozon/WB热销榜 + 蓝海识别 + 1688跨境榜 4 路综合，24h 关键词池缓存）。爬虫走\
+  \ Accio browser sub-agent 复用 Chrome 登录态，列表页提取 9 字段（商品ID/标题/链接/主图/价格/月销/店铺/店龄/起订量），详情字段留给采集环节。当用户说「执行辰启-选品」「开始选品」「跑\
+  \ chenqi-product-sourcing」「选品调研」「按关键词选品」「按店铺链接选品」时触发。前置：(1) chenqi-lark-setup 已跑过且\
+  \ output/base_info.json 存在；(2) Schema 版本必须匹配（v3.1.0+，含 9 个 S_ 状态字段）；(3) 当前账号 Chrome\
+  \ 已登录 1688；(4) Python 3.10+。不适用于：采集详情数据（用 chenqi-auto-collect）；阿里巴巴国际站选品（数据源仅 1688）。\n\
+  tool_type: internal\n\nparameters:\n  type: object\n  properties:\n    query:\n\
+  \      type: string\n      description: 查询内容\n  required:\n    - query\n\ncall_config:\n\
+  \  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

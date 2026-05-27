@@ -1,0 +1,12 @@
+"tool_name: ecommerce_marketing\ntool_desc: E-commerce marketing orchestrator that\
+  \ routes user requests to 19 specialized marketing skills. Use when user mentions\
+  \ marketing strategy, product promotion, social media campaign, increase sales,\
+  \ launch product, conversion optimization, Instagram marketing, TikTok marketing,\
+  \ 小红书推广, Facebook ads, Google ads, product description, landing page, SEO, content\
+  \ calendar, marketing ROI, or any e-commerce marketing goal — even if they don't\
+  \ use the word \"marketing\" explicitly. Also trigger for questions like \"how do\
+  \ I get more customers\", \"nobody is buying my product\", \"I need to grow my store\"\
+  , or \"帮我推广产品\".\n\ntool_type: internal\n\nparameters:\n  type: object\n  properties:\n\
+  \    query:\n      type: string\n      description: 查询内容\n  required:\n    - query\n\
+  \ncall_config:\n  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n\
+  \  type: text\n"

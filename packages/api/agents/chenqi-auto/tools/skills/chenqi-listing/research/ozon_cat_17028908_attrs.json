@@ -1,0 +1,76 @@
+{
+  "result": [
+    {
+      "description_category_id": 17028908,
+      "type_id": 94254,
+      "attributes": [
+        {
+          "id": 85,
+          "name": "Бренд",
+          "description": "Выберите бренд из списка",
+          "type": "string",
+          "is_required": true,
+          "is_collection": false,
+          "dictionary_id": 287,
+          "is_aspect": false,
+          "category_dependent": true
+        },
+        {
+          "id": 8229,
+          "name": "Тип",
+          "description": "Тип устройства",
+          "type": "string",
+          "is_required": true,
+          "is_collection": false,
+          "dictionary_id": 298,
+          "is_aspect": false,
+          "category_dependent": true
+        },
+        {
+          "id": 9048,
+          "name": "Название модели",
+          "description": "Введите название модели",
+          "type": "string",
+          "is_required": true,
+          "is_collection": false,
+          "dictionary_id": 0,
+          "is_aspect": false,
+          "category_dependent": true
+        },
+        {
+          "id": 10096,
+          "name": "Цвет товара",
+          "description": "Выберите цвет",
+          "type": "string",
+          "is_required": true,
+          "is_collection": false,
+          "dictionary_id": 245,
+          "is_aspect": true,
+          "category_dependent": true
+        },
+        {
+          "id": 11025,
+          "name": "Время автономной работы, ч",
+          "description": "Максимальное время работы от аккумулятора",
+          "type": "decimal",
+          "is_required": false,
+          "is_collection": false,
+          "dictionary_id": 0,
+          "is_aspect": false,
+          "category_dependent": false
+        },
+        {
+          "id": 9565,
+          "name": "Беспроводные интерфейсы",
+          "description": "Поддерживаемые интерфейсы",
+          "type": "string",
+          "is_required": false,
+          "is_collection": true,
+          "dictionary_id": 356,
+          "is_aspect": false,
+          "category_dependent": false
+        }
+      ]
+    }
+  ]
+}

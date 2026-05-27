@@ -1,0 +1,158 @@
+{
+  "skills": [
+    {
+      "id": "27_skill-finder",
+      "name": "skill-finder",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "skill-finder",
+      "description": "Find, search, recommend, and install agent skills from the internal catalog, skills.sh, ClawHub, and SkillsMP — all in one place. Always consult this when user asks to find, search, discover, or choose skills, OR when the user already names a built-in skill they want to install. Use when user says \"how do I do X\", \"find a skill for X\", \"is there a skill that can...\", \"search all platforms\", \"best skill for X\", \"what skill should I use for X\", \"该用什么skill\", \"有没有XX的skill\", \"帮我找skill\", \"推荐一个skill\", or expresses interest in extending capabilities or choosing the right skill for a task. Also use when the user names a specific built-in skill to install or enable, e.g. \"install <skill-name>\", \"帮我安装XX技能\", \"给agent加上XX技能\", \"enable XX skill\", \"为agent配置XX技能\", \"把XX技能装上\".",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\skill-finder"
+    },
+    {
+      "id": "27_skill-creator",
+      "name": "skill-creator",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "skill-creator",
+      "description": "Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\skill-creator"
+    },
+    {
+      "id": "27_self-improvement",
+      "name": "self-improvement",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "self-improvement",
+      "description": "Captures learnings, errors, corrections, and self-reflections into daily diary for continuous improvement. Use when: (1) A command or operation fails unexpectedly, (2) User corrects you, (3) User requests a capability that doesn't exist, (4) An external API or tool fails, (5) Knowledge is outdated or incorrect, (6) A better approach is discovered, (7) You complete significant work and want to evaluate quality. Also review diary before major tasks.",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\self-improvement"
+    },
+    {
+      "id": "27_gmail-assistant",
+      "name": "gmail-assistant",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "gmail-assistant",
+      "description": "Send, search, and manage Gmail messages with automatic delivery verification and smart draft workflow",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\gmail-assistant"
+    },
+    {
+      "id": "27_accio-mcp-cli",
+      "name": "accio-mcp-cli",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "accio-mcp-cli",
+      "description": "Use the accio-mcp-cli command-line tool to discover, search, and invoke MCP tools (Twitter, Gmail, Notion, Square, Apify, etc.) directly from the terminal. Use when the user asks to call MCP tools via CLI, run accio-mcp-cli commands, list available MCP tools from the command line, or invoke remote service integrations from the shell instead of an in-app MCP gateway.",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\accio-mcp-cli"
+    },
+    {
+      "id": "27_product-selection",
+      "name": "product-selection",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "product-selection",
+      "description": "Product selection workflow: industry research → consumer research → product selection → supplier matching. Evidence-first, multi-source validation. Use when user wants to select products, find trending items, analyze categories, discover follow-sell opportunities, or asks \"what to sell\", \"which products\", \"hot products\". Works with product-supplier-sourcing skill.\n",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\product-selection"
+    },
+    {
+      "id": "27_product-supplier-sourcing",
+      "name": "product-supplier-sourcing",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "product-supplier-sourcing",
+      "description": "Product sourcing and supplier discovery. Use when the user wants to find products, compare items, search for suppliers, manufacturers, or factories on B2B platforms. Default source is alibaba.com via the `product_supplier_search` tool. If the user specifies another platform, look for available tools or methods for that platform.",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\product-supplier-sourcing"
+    },
+    {
+      "id": "27_market-insight-product-selection",
+      "name": "market-insight-product-selection",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "market-insight-product-selection",
+      "description": "Adaptive product-selection methodology built on multi-source signals and \"voice of customer\" (VoC): validate demand, momentum, competitive intensity, and user pain points from reviews/comments to produce a confident shortlist or a focused go/no-go.\n**When to use**:\n  - User is asking about trends/popularity (Tiktok/Amazon/etc.), or what's selling well in a market (US/UK/etc.)\n  - User asks for **single-category / single-product** trend analysis\n  - User wants market analysis, market research, or competitive landscape insights\n  - User is researching consumer preferences, demand patterns, or market dynamics\n  - User needs help deciding what products to sell, source, or invest in\n  - User is exploring product opportunities, winning products, or profitable niches\n",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\market-insight-product-selection"
+    },
+    {
+      "id": "27_ecommerce-marketing",
+      "name": "ecommerce-marketing",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "ecommerce-marketing",
+      "description": "E-commerce marketing orchestrator that routes user requests to 19 specialized marketing skills. Use when user mentions marketing strategy, product promotion, social media campaign, increase sales, launch product, conversion optimization, Instagram marketing, TikTok marketing, 小红书推广, Facebook ads, Google ads, product description, landing page, SEO, content calendar, marketing ROI, or any e-commerce marketing goal — even if they don't use the word \"marketing\" explicitly. Also trigger for questions like \"how do I get more customers\", \"nobody is buying my product\", \"I need to grow my store\", or \"帮我推广产品\".\n",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\ecommerce-marketing"
+    },
+    {
+      "id": "27_review-summarizer",
+      "name": "review-summarizer",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "review-summarizer",
+      "description": "Scrape, analyze, and summarize product reviews from multiple platforms (Amazon, Google, Yelp, TripAdvisor). Extract key insights, sentiment analysis, pros/cons, and recommendations. Use when researching products for arbitrage, creating affiliate content, or making purchasing decisions.",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\review-summarizer"
+    },
+    {
+      "id": "27_pptx",
+      "name": "pptx",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "pptx",
+      "description": "Presentation creation, editing, and analysis. Use when working with presentations (.pptx files) for: (1) Creating new presentations, (2) Modifying or editing content, (3) Working with layouts, (4) Adding comments or speaker notes, or any other presentation tasks",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\pptx"
+    },
+    {
+      "id": "27_pdf",
+      "name": "pdf",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "pdf",
+      "description": "Comprehensive PDF manipulation toolkit for extracting text, tables, images, creating new PDFs, merging/splitting documents, and handling forms. Use when you need to fill in a PDF form or process, generate, or analyze PDF documents.",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\pdf"
+    },
+    {
+      "id": "27_docx",
+      "name": "docx",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "docx",
+      "description": "Comprehensive document creation, editing, and analysis with support for tracked changes, comments, formatting preservation, and text extraction. Use when working with professional documents (.docx files) for: (1) Creating new documents, (2) Modifying or editing content, (3) Working with tracked changes, (4) Adding comments, or any other document tasks",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\docx"
+    },
+    {
+      "id": "27_xlsx",
+      "name": "xlsx",
+      "version": "0.0.60",
+      "enabled": true,
+      "kind": "directory",
+      "entryName": "xlsx",
+      "description": "Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis, and visualization. Use when working with spreadsheets (.xlsx, .xlsm, .csv, .tsv, etc) for: (1) Creating new spreadsheets with formulas and formatting, (2) Reading or analyzing data, (3) Modify existing spreadsheets while preserving formulas, (4) Data analysis and visualization in spreadsheets, or (5) Recalculating formulas",
+      "status": "installed",
+      "installPath": "C:\\Users\\Administrator\\.accio\\accounts\\1763036248\\agents\\MID-00036248U1779764-D3CA4E-7396-2348F3\\agent-core\\skills\\xlsx"
+    }
+  ]
+}

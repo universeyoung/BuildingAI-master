@@ -1,0 +1,118 @@
+/
+├── assets/ 静态资源（项目级图片、图标等）
+├── docker/  Docker 相关配置与镜像构建文件
+├── extensions/ 扩展应用（可插拔扩展/示例扩展）
+├── packages/ 包
+│   ├── @buildingai/ （Core Shared Packages）
+│   │   ├── ai-sdk/  AI SDK
+│   │   ├── ai-sdk-new/ AI SDK（新版实现）
+│   │   ├── ai-toolkit/ AI 工具集（上层工具/通用能力集合）
+│   │   ├── alipay-sdk/ 支付宝 SDK（支付/签名等）
+│   │   ├── base/ 基础能力（通用基类/约定/核心工具）
+│   │   ├── cache/ 缓存
+│   │   ├── config/ 配置
+│   │   ├── constants/ 常量定义（跨包共享常量）
+│   │   ├── db/ 数据库
+│   │   ├── decorators/ 装饰器
+│   │   ├── di/ 依赖注入
+│   │   ├── dict/ 字典
+│   │   ├── dto/ 数据传输对象
+│   │   ├── errors/ 错误
+│   │   ├── eslint-config/ ESLint 共享配置
+│   │   ├── extension-sdk/ 扩展 SDK
+│   │   ├── llm-file-parser/ LLM 文件解析
+│   │   ├── logger/ 日志
+│   │   ├── pipe/ 管道
+│   │   ├── types/  类型声明
+│   │   ├── typescript-config/ TS配置
+│   │   ├── upgrade/ 升级框架
+│   │   ├── utils/   工具函数
+│   │   ├── web/  Web 共享包集合
+│   │   │   ├── core/  Web 核心
+│   │   │   ├── hooks/   通用 hooks
+│   │   │   ├── http/   HTTP 客户端封装
+│   │   │   ├── i18n/   国际化
+│   │   │   ├── services/   API services
+│   │   │   ├── stores/  全局状态
+│   │   │   ├── types/  Web 侧类型
+│   │   │   └── ui/   UI 组件库
+│   │   └── wechat-sdk/   微信 SDK
+│   │
+│   ├── api/   Backend API Service
+│   │   ├── dist/    编译产物
+│   │   ├── src/     源码
+│   │   │   ├── assets/   服务静态资源
+│   │   │   ├── common/    公共层
+│   │   │   ├── core/   核心基础设施
+│   │   │   ├── migrations/   数据库迁移
+│   │   │   ├── modules/    业务模块
+│   │   │   └── main.ts    服务入口
+│   │   ├── data/    运行数据
+│   │   ├── storage/    服务运行时存储
+│   │   ├── nest-cli.json    Nest CLI 配置
+│   │   ├── eslint.config.mjs   ESLint 配置
+│   │   ├── tsconfig*.json    TS 配置（build/编译配置）
+│   │   └── package.json    包配置
+│   │
+│   ├── cli/    (Command Line Interface)
+│   │   ├── bin/ 
+│   │   ├── src/
+│   │   │   ├── commands/  命令实现
+│   │   │   ├── utils/   工具
+│   │   │   └── index.ts    CLI 程序入口/导出
+│   │   ├── eslint.config.mjs    ESLint 配置
+│   │   ├── tsconfig*.json    TS 配置）
+│   │   └── package.json     包配置
+│   │
+│   ├── client/   (Web Frontend Packages)
+│   │   ├── dist/    构建产物
+│   │   ├── public/    公共静态资源
+│   │   ├── src/ 
+│   │   │   ├── assets/   资源
+│   │   │   ├── components/  通用组件
+│   │   │   ├── hooks/   通用 hooks
+│   │   │   ├── layouts/      布局
+│   │   │   ├── locales/    国际化资源
+│   │   │   ├── pages/    页面
+│   │   │   ├── router/   路由配置
+│   │   │   ├── styles/    全局样式/主题
+│   │   │   ├── utils/     前端工具函数
+│   │   │   ├── main.tsx    前端入口
+│   │   │   └── vite-env.d.ts   Vite 类型声明
+│   │   ├── index.html   Vite HTML 模板
+│   │   ├── vite.config.ts      Vite 配置
+│   │   ├── eslint.config.mjs       ESLint 配置
+│   │   ├── tsconfig*.json          TS 配置
+│   │   └── package.json            包配置
+│   │
+│   └── core/    （ Core Logic & Services）
+│       ├── dist/        编译产物
+│       ├── src/     源码
+│       │   ├── @nestjs/            Nest 相关扩展/适配
+│       │   ├── decorators/         装饰器
+│       │   ├── interfaces/         接口定义
+│       │   ├── modules/            核心模块
+│       │   ├── services/           核心服务层
+│       │   └── index.ts            导出入口
+│       ├── eslint.config.mjs       ESLint 配置
+│       ├── tsconfig*.json          TS 配置
+│       └── package.json            包配置
+├── public/                         项目级静态资源
+├── scripts/                        工程脚本
+├── skills/                         规则/技能资源
+├── storage/                        项目级运行时存储
+├── templates/                      模板
+├── logs/                           日志目录
+├── .dockerignore                   Docker 忽略
+├── .editorconfig                   编辑器风格配置
+├── .gitignore                      Git 忽略
+├── docker-compose.yml              Docker Compose 编排
+├── ecosystem.config.js             PM2 配置
+├── LICENSE                         许可证
+├── PRIVACY_NOTICE.md               隐私声明
+├── README.md                       项目说明（英文）
+├── README.zh-CN.md                 项目说明（中文）
+├── package.json                    根包配置
+├── pnpm-lock.yaml                  pnpm 锁文件
+├── pnpm-workspace.yaml             pnpm 工作区配置
+└── turbo.json                      TurboRepo 配置

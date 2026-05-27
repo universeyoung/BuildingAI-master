@@ -1,0 +1,11 @@
+"tool_name: chenqi_pricing\ntool_desc: 辰启-自动核价 v0.1。从飞书「商品全生命周期」表 P_TODO 行抢占 1 个 record，\n\
+  按 GUOO 5 组 + CEL 4 组共 9 组物流定价表全比价取最便宜，结合 Ozon 类目佣金率\n+ 末端配送 4% + 收单 2% + 缓冲 5% +\
+  \ 广告 8% + 服务费 2% + 利润目标 50% 反推合规售价。\n缺 weight/dims 时通过 agent 调 see_image 视觉估算（输入：规格主图URL\
+  \ + 采集多角度图组URL 前 5 张共 6 图），\nconfidence ≥ 0.6 自动补齐并写飞书 [VISION_EST] 标记，否则 P_FAILED\
+  \ PRICE_MISSING_INPUT。\n写飞书 8 字段（售价/利润/利润率/Ozon佣金/末端配送费/总成本/物流明细/目标售价）\n+ 状态置 P_DONE\
+  \ → 触发下游上架 L_TODO；\n公式失败（倍率>15x / 利润<0 / 物流>45% / 总扣率>95%）打 P_FAILED 对应枚举。\n当用户说「执行辰启-自动核价」「跑下一个核价」「核价\
+  \ P_TODO」「auto-pricing」时触发。\n前置：(1) chenqi-lark-setup ≥v3.3.0 已跑且 base_info.json\
+  \ 存在；\n(2) chenqi-auto-collect 已写入 ≥1 条 P_TODO；\n(3) Python 3.12+ + lark-cli 当前账号已绑定。\n\
+  \ntool_type: internal\n\nparameters:\n  type: object\n  properties:\n    query:\n\
+  \      type: string\n      description: 查询内容\n  required:\n    - query\n\ncall_config:\n\
+  \  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

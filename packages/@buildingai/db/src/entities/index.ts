@@ -18,7 +18,7 @@ export { AiUserMcpServer } from "./ai-user-mcp-server.entity";
 export { UserMemory } from "./ai-user-memory.entity";
 export { Analyse, AnalyseActionType } from "./analyse.entity";
 export { CardBatch, CardRedeemType } from "./card-batch.entity";
-export { CardKeyStatus, CDK } from "./cdk.entity";
+export { CDK, CardKeyStatus } from "./cdk.entity";
 export { Datasets, SquarePublishStatus } from "./datasets.entity";
 export { DatasetsChatMessage } from "./datasets-chat-message.entity";
 export { DatasetsChatRecord } from "./datasets-chat-record.entity";
@@ -48,7 +48,7 @@ export { Recharge } from "./recharge.entity";
 export { RechargeOrder } from "./recharge-order.entity";
 export { RefundLog } from "./refund-log.entity";
 export { Role } from "./role.entity";
-export { type KeyFieldValue, Secret } from "./secret.entity";
+export { Secret, type KeyFieldValue } from "./secret.entity";
 export {
     FieldType,
     SecretTemplate,
@@ -61,3 +61,17 @@ export { User } from "./user.entity";
 export { UserDict } from "./user-dict.entity";
 export { UserSubscription } from "./user-subscription.entity";
 export { UserToken } from "./user-token.entity";
+
+export { Team, LeadType, TeamStatus } from "./team.entity";
+export { TeamMember } from "./team-member.entity";
+export { LocalAgent, AgentStatus } from "./agent.entity";
+export { Task, TaskStatus } from "./task.entity";
+export { Subtask, SubtaskStatus, SubtaskPriority } from "./subtask.entity";
+export { SubtaskDependency, DependencyType } from "./subtask-dependency.entity";
+export { Message, MessageSenderType, MessageContentType } from "./message.entity";
+export { CollaborationSpace } from "./collaboration-space.entity";
+export { SharedMemoryEntry } from "./shared-memory-entry.entity";
+export { ExperienceCard, ExperienceCategory, ExperienceSource } from "./experience-card.entity";
+export { ApiKey, ApiKeyStatus } from "./api-key.entity";
+export { KeyPool, KeyPoolStatus, KeyPoolStrategy } from "./key-pool.entity";
+export { ModelConfig } from "./model-config.entity";

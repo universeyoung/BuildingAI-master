@@ -1,0 +1,4 @@
+llm_config:
+  model_name: gpt-4o
+  temperature: 0.3
+  max_tokens: 4096

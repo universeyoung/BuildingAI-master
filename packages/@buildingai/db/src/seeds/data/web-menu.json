@@ -53,6 +53,19 @@
             }
         },
         {
+            "id": "menu_teams",
+            "icon": "users",
+            "title": "团队",
+            "link": {
+                "label": "团队",
+                "path": "/teams",
+                "type": "system",
+                "query": {},
+                "component": "/src/pages/teams/index.tsx",
+                "target": "_self"
+            }
+        },
+        {
             "id": "menu_history_fixed",
             "icon": "folder-clock",
             "title": "历史记录",

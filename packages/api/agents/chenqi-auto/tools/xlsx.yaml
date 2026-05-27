@@ -1,0 +1,9 @@
+"tool_name: xlsx\ntool_desc: Comprehensive spreadsheet creation, editing, and analysis\
+  \ with support for formulas, formatting, data analysis, and visualization. Use when\
+  \ working with spreadsheets (.xlsx, .xlsm, .csv, .tsv, etc) for: (1) Creating new\
+  \ spreadsheets with formulas and formatting, (2) Reading or analyzing data, (3)\
+  \ Modify existing spreadsheets while preserving formulas, (4) Data analysis and\
+  \ visualization in spreadsheets, or (5) Recalculating formulas\ntool_type: internal\n\
+  \nparameters:\n  type: object\n  properties:\n    query:\n      type: string\n \
+  \     description: 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n\
+  \  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

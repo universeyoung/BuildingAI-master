@@ -1,0 +1,75 @@
+# chenqi-listing v0.1 配置
+# 修改后无需重启，每个 script 启动时重新加载
+
+batch:
+  # 每个 batch 处理 N 个 record（v0.1 单 record 测试用 1）
+  batch_size: 1
+  # 两个 record 之间间隔秒数（防 Ozon 429）
+  sleep_between_records: 2
+
+defaults:
+  # 默认初始库存（用户决策：99）
+  stock: 99
+  # Ozon 跨境店 currency（用户决策 Q4：不换汇直接 CNY）
+  currency_code: CNY
+  vat: "0"
+
+barcode:
+  # v0.2.2 自动生成店内唯一码（纯字母数字，不带任何符号）
+  # 格式: <prefix><record_id>[<color_hash4>]   例: CQrecvjfOd45GfjfA3F7
+  # prefix 限制：纯 ASCII 字母数字，建议 2-4 位
+  # color_hash4 = md5(color_zh)[:4] 大写 hex（保证字母数字，避免中文/拼音不可控字符）
+  # 多 SKU 商品必开 append_color（不同颜色 hash 不同→码不冲突）
+  enabled: true
+  prefix: "CQ"
+  append_color: false   # 默认关，避免单 SKU 加无意义后缀；多 SKU 上架前置 true
+
+price:
+  # v0.2 三档价：飞书「售价(¥)」当 min_price（保本底价/平台禁低于此价折扣）
+  # price = min_price × markup_price（实际售价）
+  # old_price = min_price × markup_old（划线原价，营造折扣感）
+  # 基数策略：同基（user 决策 Q2=A），不是链式
+  # CNY 跨境店 min_price 已实测支持（user 决策 Q4 自带）
+  markup_price: 1.10
+  markup_old: 1.20
+  # 价格四舍五入小数位（CNY 2 位）
+  round_decimals: 2
+  # 蓝牙音箱兜底字典 ID（实测验证，教训 #31）
+  brand_dict_value_id: 126745801      # Нет бренда
+  country_dict_value_id: 90296        # Китай
+  type_dict_value_id: 95320           # Беспроводная колонка
+  color_default_dict_value_id: 61574  # черный
+
+ozon:
+  base_url: https://api-seller.ozon.ru
+  request_timeout: 20
+  rate_limit_sleep: 0.5
+  # 轮询导入状态
+  poll_interval: 10
+  poll_timeout: 300              # 5 分钟超时（决策兜底）
+
+cache:
+  attrs_ttl_hours: 24            # 类目属性缓存 24h
+  attr_values_ttl_hours: 168     # 字典值缓存 7 天
+
+image_check:
+  min_side: 700                  # Ozon 主图最低 700×700
+  http_timeout: 10
+  # Q5：图片技能已处理跨境 CDN，直接信任主图1~8直链字段
+
+rich_content:
+  # 教训 #35（v0.2 修）依据 OZON_RICH_CONTENT_权威指南.md schema v0.3
+  # 三段式：raTextBlock 标题 + raShowcase roll 图片轮播 + list bullet 卖点
+  include_images: true           # 是否在 RC 里加图片轮播。被沙盒擦时改 false 仅留文本+list
+  max_images: 8                  # 轮播最多多少张
+  intro_text_default: "Качественный товар по выгодной цене. Быстрая доставка из Китая."
+  fallback_bullets:              # bullets+features 都空时的兜底
+    - "Премиум качество и надёжность"
+    - "Современный стильный дизайн"
+    - "Удобство в использовании"
+    - "Быстрая доставка по всей России"
+
+dry_run:
+  # Q3=C 双管齐下
+  save_payload_path: cache/dry_run_{record_id}.json
+  print_summary: true

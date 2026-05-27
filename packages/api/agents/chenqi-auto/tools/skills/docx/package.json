@@ -1,0 +1,12 @@
+{
+  "name": "docx-skill-deps",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned Node deps for the docx skill. Do not import from app code.",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "docx": "9.6.1"
+  }
+}

@@ -1,0 +1,8 @@
+"tool_name: accio_mcp_cli\ntool_desc: Use the accio-mcp-cli command-line tool to discover,\
+  \ search, and invoke MCP tools (Twitter, Gmail, Notion, Square, Apify, etc.) directly\
+  \ from the terminal. Use when the user asks to call MCP tools via CLI, run accio-mcp-cli\
+  \ commands, list available MCP tools from the command line, or invoke remote service\
+  \ integrations from the shell instead of an in-app MCP gateway.\ntool_type: internal\n\
+  \nparameters:\n  type: object\n  properties:\n    query:\n      type: string\n \
+  \     description: 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n\
+  \  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

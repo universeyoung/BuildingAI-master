@@ -1,0 +1,8 @@
+"tool_name: product_supplier_sourcing\ntool_desc: Product sourcing and supplier discovery.\
+  \ Use when the user wants to find products, compare items, search for suppliers,\
+  \ manufacturers, or factories on B2B platforms. Default source is alibaba.com via\
+  \ the `product_supplier_search` tool. If the user specifies another platform, look\
+  \ for available tools or methods for that platform.\ntool_type: internal\n\nparameters:\n\
+  \  type: object\n  properties:\n    query:\n      type: string\n      description:\
+  \ 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n  method: POST\n\
+  \  timeout: 30\n\nresponse_format:\n  type: text\n"

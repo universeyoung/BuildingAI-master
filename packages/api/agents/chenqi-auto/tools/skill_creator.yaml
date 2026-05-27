@@ -1,0 +1,8 @@
+"tool_name: skill_creator\ntool_desc: Create new skills, modify and improve existing\
+  \ skills, and measure skill performance. Use when users want to create a skill from\
+  \ scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark\
+  \ skill performance with variance analysis, or optimize a skill's description for\
+  \ better triggering accuracy.\ntool_type: internal\n\nparameters:\n  type: object\n\
+  \  properties:\n    query:\n      type: string\n      description: 查询内容\n  required:\n\
+  \    - query\n\ncall_config:\n  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n\
+  \  type: text\n"

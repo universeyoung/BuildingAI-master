@@ -1,0 +1,11 @@
+"tool_name: chenqi_auto_collect\ntool_desc: 辰启-自动采集 v0.3.1。从 1688 详情页深度采集商品字段并写回飞书多维表，C_DONE\
+  \ 时同时点亮 3 个下游入口信号（翻译 T_TODO / 图片 I_TODO / 核价 P_TODO，三者并行）。核心特性：(1)消费选品技能写入的 C_TODO\
+  \ 入口信号；(2)抢占式状态机 C_TODO→C_DOING→C_DONE/C_FAILED 防重；(3)主图 URL 去重的智能扁平化（不靠规格名维度，按主图\
+  \ hash 去重，1 商品最多 10 条 SKU）；(4)主图三级校验（清洗缩略后缀+可达性+尺寸≥600）；(5)重量/尺寸优先取「商品件重尺」表（按 SKU\
+  \ 颜色分行的物流强制填写数据，强可信），fallback 用「商品属性」表 + 单位智能推断（无单位且数值>50 自动÷10），仍缺失则留 None 给下游核价做视觉估算（v0.2\
+  \ 删除瞎填的类目规则路径）；(6)1688 反爬友好（串行 60s 间隔+复用 Chrome 登录态+滑块即降级）；(7)失败事件流水+本地 JSON 快照。当用户说「执行辰启-自动采集」「开始采集商品」「采集\
+  \ C_TODO」「跑下一批采集」时触发。前置：(1) chenqi-lark-setup 已跑过且 base_info.json 存在；(2) 选品技能已写入\
+  \ ≥1 条 C_TODO 记录；(3) 当前账号 Chrome 已登录 1688；(4) Python 3.10+。\ntool_type: internal\n\
+  \nparameters:\n  type: object\n  properties:\n    query:\n      type: string\n \
+  \     description: 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n\
+  \  method: POST\n  timeout: 30\n\nresponse_format:\n  type: text\n"

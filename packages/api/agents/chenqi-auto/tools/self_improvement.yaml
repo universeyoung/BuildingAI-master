@@ -1,0 +1,10 @@
+"tool_name: self_improvement\ntool_desc: Captures learnings, errors, corrections,\
+  \ and self-reflections into daily diary for continuous improvement. Use when: (1)\
+  \ A command or operation fails unexpectedly, (2) User corrects you, (3) User requests\
+  \ a capability that doesn't exist, (4) An external API or tool fails, (5) Knowledge\
+  \ is outdated or incorrect, (6) A better approach is discovered, (7) You complete\
+  \ significant work and want to evaluate quality. Also review diary before major\
+  \ tasks.\ntool_type: internal\n\nparameters:\n  type: object\n  properties:\n  \
+  \  query:\n      type: string\n      description: 查询内容\n  required:\n    - query\n\
+  \ncall_config:\n  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n\
+  \  type: text\n"

@@ -1,0 +1,154 @@
+# 辰启-自动采集 - 运行规则配置
+# v0.1 - 2026-05-11
+
+# 节奏与并发
+defaults:
+  # 单 SKU 处理间隔（写完一条 SKU 等待 N 秒再开始下一条）
+  inter_sku_interval_sec: 60
+  # 详情页 DOM 关键元素等待上限（秒）
+  page_wait_timeout_sec: 5
+  # 选项点击后等图片刷新（秒）
+  click_settle_sec: 1.5
+  # 单条 SKU 最多处理时长（避免卡死，秒）
+  sku_max_duration_sec: 180
+  # 单批次最多处理 SKU 数（poll 模式）
+  max_skus_per_run: 50
+
+# 重试策略
+retry:
+  # 整页采集失败重试次数（不算原始一次）
+  max_retries: 2
+  # 退避时间（秒），按 retry 次数索引
+  backoff_seconds: [10, 30]
+  # 触发立即降级（不重试）的关键词，命中即 C_FAILED
+  fatal_keywords:
+    - "滑块"
+    - "请完成验证"
+    - "登录后查看"
+    - "captcha"
+    - "verify"
+    - "请登录"
+    - "亲，您的访问太频繁"
+
+# SKU 数量上限保护（核心：主图去重后还多就截断）
+sku_limits:
+  # 1 个商品最多采集主图变种数（去重后）
+  max_unique_images: 10
+  # 截断时的优先策略
+  # - first_n: 按维度组合出现顺序保留前 N
+  # - skip_sold_out: 优先跳过显示「已售罄」的规格
+  truncation_strategy: "skip_sold_out_then_first_n"
+
+# 主图三级校验
+image_validation:
+  # L1 协议清洗：URL 中要剥除的缩略后缀
+  thumbnail_suffix_patterns:
+    - "_sum.jpg"
+    - "_60x60.jpg"
+    - "_120x120.jpg"
+    - "_220x220.jpg"
+    - "_400x400.jpg"
+    - "_q90.jpg"
+    - "_.webp"
+    - "_.heic"
+  # 要剥除的 URL query 参数
+  strip_query_keys:
+    - "x-oss-process"
+    - "auth_key"
+    - "noaup"
+    - "watermark"
+  # L2 可达性：HEAD 请求超时（秒）
+  head_timeout_sec: 8
+  # L2 可达性：最小字节数（< 此即视为空白图）
+  min_content_length: 5120
+  # L3 尺寸：最小宽度（像素）
+  min_width: 600
+  # L3 尺寸：下载头部字节数（用于解析 width）
+  header_bytes: 8192
+
+# 详情页选择器优先级（多版本兼容）
+selectors:
+  # 标题
+  title:
+    - "h1.d-title"
+    - "h1.title"
+    - ".d-title-text"
+    - "#mod-detail-title h1"
+  # 价格区域
+  price_area:
+    - ".price-list"
+    - ".mod-detail-price"
+    - "#mod-detail-price"
+    - ".price-original"
+  # SKU 维度区
+  sku_panel:
+    - "#mod-detail-bd .module-od-sku-selection"
+    - ".od-pc-offer-detail-sku"
+    - ".sku-prop"
+    - "#sku-selection"
+  # 单 SKU 选项
+  sku_option_item:
+    - ".sku-prop-item"
+    - ".sku-prop-content li"
+    - ".prop-item"
+  # 主图当前显示
+  main_image:
+    - "img.detail-gallery-img"
+    - "#dt-tab .first-image"
+    - ".vertical-img img"
+    - ".tb-thumb img"
+  # 表格型物理属性（#productPackInfo）
+  attr_table: "#productPackInfo"
+  # 物理属性键值对模式
+  attrs_kv:
+    - ".obj-content table tr"
+    - ".attribute-list li"
+    - "#mod-detail-attributes table tr"
+  # 行内规格列表（无需点击的特例）
+  inline_sku_list:
+    - ".expand-view-list"
+    - ".sku-quick-list"
+
+# 物理属性单位归一化
+units:
+  # 重量目标单位 g
+  weight_to_g:
+    "kg": 1000
+    "千克": 1000
+    "公斤": 1000
+    "g": 1
+    "克": 1
+    "mg": 0.001
+  # 长度目标单位 cm
+  length_to_cm:
+    "m": 100
+    "米": 100
+    "cm": 1
+    "厘米": 1
+    "mm": 0.1
+    "毫米": 0.1
+
+# 失败码降级映射（飞书表枚举不全时用）
+# 真实码 → 降级到 schema 已存在的枚举值
+failure_code_fallback:
+  CRAWL_LOGIN_REQUIRED: "采集失败"
+  CRAWL_PAGE_TIMEOUT: "采集失败"
+  CRAWL_NO_SKU: "采集失败"
+  CRAWL_IMAGE_FAIL: "图片不可用"
+  CRAWL_TOO_MANY_SKU: "采集失败"
+  CRAWL_PARSE_ERROR: "采集失败"
+
+# 失败阶段映射（schema 实际枚举：选品/采集/翻译/图片/核价/上架/质检）
+failure_stage_value: "采集"
+
+# 严重等级映射（schema 实际枚举：HIGH/MEDIUM/LOW）
+severity_levels:
+  fatal: "HIGH"     # 滑块/登录页/连续重试失败
+  partial: "MEDIUM" # 部分字段缺失但能继续
+  warning: "LOW"    # 小问题（如 1 张主图加载慢）
+
+# 输出
+output:
+  snapshot_dir: "output/snapshots"
+  state_dir: "output"
+  log_level: "INFO"

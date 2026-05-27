@@ -1,0 +1,1115 @@
+# 前端组件与工具开发文档
+
+本文档整理 BuildingAI 前端中已经自研或二次封装过的组件与工具。它不是第三方库说明书，而是告诉开发者：项目里已有的封装在哪里、适合解决什么问题、怎么接入、什么时候不要重复造。
+
+## 范围与导入规则
+
+| 类型            | 位置                                                                         | 导入方式                                       | 说明                                          |
+| --------------- | ---------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
+| 跨项目 UI 组件  | `packages/@buildingai/web/ui/src/components`                                 | `@buildingai/ui/components/...`                | 可被主应用和扩展共同使用                      |
+| 跨项目 UI hooks | `packages/@buildingai/web/ui/src/hooks`                                      | `@buildingai/ui/hooks/...`                     | 偏 UI 行为，如确认弹窗、分页、上传            |
+| 页面级 hooks    | `packages/@buildingai/web/hooks/src`                                         | `@buildingai/hooks`                            | 页面 head、复制、刷新用户配置、设置弹窗上下文 |
+| 请求封装        | `packages/@buildingai/web/http/src`、`packages/@buildingai/web/services/src` | `@buildingai/http`、`@buildingai/services/...` | HTTP client、业务 API hooks、上传服务         |
+| 全局状态        | `packages/@buildingai/web/stores/src`                                        | `@buildingai/stores`                           | Zustand store 与持久化                        |
+| 主应用业务组件  | `packages/client/src/components`                                             | 主应用内相对路径或 `@/components/...`          | 依赖主应用业务接口和状态，不默认给扩展使用    |
+| 扩展前端封装    | `packages/@buildingai/web/core/src`                                          | `@buildingai/web-core`                         | 扩展路由、Vite 配置                           |
+
+建议：
+
+- 页面开发优先使用 `@buildingai/ui/components/ui/*` 基础组件。
+- 上传优先使用 `ImageUpload`、`Upload`、`useUploadFile`，不要在页面里手写 FormData。
+- 列表接口优先封装成 `useXxxQuery` / `useXxxMutation`，不要在组件里直接调用 `http.get`。
+- 通用 AI 展示组件放到
+  `@buildingai/ui/components/ai-elements`；依赖主应用会话、反馈、历史消息的组件留在
+  `packages/client/src/components/ask-assistant-ui`。
+
+## 基础增强 UI
+
+这些组件多数基于 shadcn/Radix/lucide 做了项目统一样式与行为扩展。
+
+| 组件                     | 导入                                                     | 适用场景                     | 项目封装点                                          |
+| ------------------------ | -------------------------------------------------------- | ---------------------------- | --------------------------------------------------- |
+| `Button`                 | `@buildingai/ui/components/ui/button`                    | 所有按钮                     | 增加 `loading`、统一 `variant/size`、支持 `asChild` |
+| `Spinner`                | `@buildingai/ui/components/ui/spinner`                   | 局部加载状态                 | 统一 loading SVG                                    |
+| `Empty` 系列             | `@buildingai/ui/components/ui/empty`                     | 空列表、空结果、缺省态       | 组合式空状态结构                                    |
+| `Field` 系列             | `@buildingai/ui/components/ui/field`                     | 表单字段布局                 | 统一 label、description、error、横纵向布局          |
+| `StatusBadge`            | `@buildingai/ui/components/ui/status-badge`              | 启用/禁用、状态显示          | 内置图标、文案、颜色变体                            |
+| `TimeText`               | `@buildingai/ui/components/ui/time-text`                 | 时间展示                     | 支持时间戳、字符串、Date、相对时间和 i18n locale    |
+| `InputGroup` 系列        | `@buildingai/ui/components/ui/input-group`               | 带前后缀、按钮、图标的输入框 | 统一 addon/button/input/textarea 组合               |
+| `Combobox` 系列          | `@buildingai/ui/components/ui/combobox`                  | 搜索选择、多选 chips         | 基于 Base UI 的项目样式封装                         |
+| `DataTableFacetedFilter` | `@buildingai/ui/components/ui/data-table-faceted-filter` | 表格单选筛选                 | Popover + Command + Badge 的固定交互                |
+
+### Button
+
+关键 props：
+
+| prop      | 说明                                                                 |
+| --------- | -------------------------------------------------------------------- |
+| `variant` | `default`、`outline`、`secondary`、`ghost`、`destructive`、`link`    |
+| `size`    | `default`、`xs`、`sm`、`lg`、`icon`、`icon-xs`、`icon-sm`、`icon-lg` |
+| `loading` | 为 true 时显示 `Spinner`，并自动 disabled                            |
+| `asChild` | 使用 Radix Slot，让按钮样式应用到子元素                              |
+
+```tsx
+import { Button } from "@buildingai/ui/components/ui/button";
+
+<Button type="submit" variant="outline" size="sm" loading={isSubmitting}>
+    保存
+</Button>;
+```
+
+使用建议：
+
+- 异步提交用 `loading`，不要额外手写禁用和 spinner。
+- 纯图标按钮用 `size="icon"` 或 `icon-sm`，并补 `aria-label`。
+- 链接样式按钮可用 `asChild` 包一层 `Link`。
+
+### Empty
+
+```tsx
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyMedia,
+    EmptyTitle,
+} from "@buildingai/ui/components/ui/empty";
+
+<Empty>
+    <EmptyMedia variant="icon">
+        <Search className="size-5" />
+    </EmptyMedia>
+    <EmptyContent>
+        <EmptyTitle>暂无数据</EmptyTitle>
+        <EmptyDescription>调整筛选条件后再试。</EmptyDescription>
+    </EmptyContent>
+</Empty>;
+```
+
+适用：
+
+- 列表没有数据。
+- 搜索无结果。
+- 页面还未配置关键资源。
+
+### Field
+
+`Field` 是表单布局封装，不负责校验。校验仍由 `react-hook-form`、`zod` 或页面逻辑处理。
+
+```tsx
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from "@buildingai/ui/components/ui/field";
+
+<FieldGroup>
+    <Field>
+        <FieldLabel htmlFor="title">标题</FieldLabel>
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <FieldDescription>展示在列表和详情页。</FieldDescription>
+        {error ? <FieldError>{error}</FieldError> : null}
+    </Field>
+
+    <Field orientation="horizontal">
+        <Switch checked={enabled} onCheckedChange={setEnabled} />
+        <FieldContent>
+            <FieldLabel>启用</FieldLabel>
+            <FieldDescription>关闭后用户侧不可见。</FieldDescription>
+        </FieldContent>
+    </Field>
+</FieldGroup>;
+```
+
+### StatusBadge
+
+```tsx
+import { StatusBadge } from "@buildingai/ui/components/ui/status-badge";
+
+<StatusBadge active={record.isEnabled} />;
+<StatusBadge active={false} inactiveText="已下架" inactiveVariant="muted" />;
+```
+
+### TimeText
+
+```tsx
+import { TimeText } from "@buildingai/ui/components/ui/time-text";
+
+<TimeText value={item.createdAt} />;
+<TimeText value={item.createdAt} variant="date" />;
+<TimeText value={item.updatedAt} variant="relative" />;
+<TimeText value={item.createdAt} format="YYYY年MM月DD日 HH:mm" />;
+```
+
+`variant`：
+
+| variant    | 输出                                |
+| ---------- | ----------------------------------- |
+| `datetime` | `YYYY-MM-DD HH:mm:ss`               |
+| `date`     | `YYYY-MM-DD`                        |
+| `time`     | `HH:mm:ss`                          |
+| `relative` | 根据当前语言显示“几分钟前/几小时前” |
+
+### IconPicker 与 LucideIcon
+
+```tsx
+import { IconPicker } from "@buildingai/ui/components/icon-picker";
+import { LucideIcon } from "@buildingai/ui/components/lucide-icon";
+
+<IconPicker value={icon} onChange={setIcon} placeholder="选择菜单图标" />;
+<LucideIcon name="settings" className="size-4" />;
+```
+
+`IconPicker` 内部做了虚拟滚动和搜索，适合后台菜单、功能入口、插件配置选择图标。
+
+## 上传组件与上传工具
+
+### ImageUpload
+
+位置：`packages/@buildingai/web/ui/src/components/ui/image-upload.tsx`
+
+导入：
+
+```tsx
+import { ImageUpload } from "@buildingai/ui/components/ui/image-upload";
+```
+
+适用：
+
+- 用户头像。
+- 应用 Logo。
+- 文章封面。
+- 配置项里的单图字段。
+
+关键 props：
+
+| prop           | 类型                        | 默认值            | 说明                     |
+| -------------- | --------------------------- | ----------------- | ------------------------ |
+| `value`        | `string \| undefined`       | -                 | 受控 URL                 |
+| `defaultValue` | `string`                    | -                 | 非受控默认 URL           |
+| `onChange`     | `(url, result) => void`     | -                 | 上传成功或清除时触发     |
+| `variant`      | `default \| outline`        | `default`         | 外观                     |
+| `size`         | `sm \| default \| lg \| xl` | `default`         | 尺寸                     |
+| `shape`        | `circle \| rounded`         | `rounded`         | 圆形或圆角               |
+| `accept`       | `string`                    | `image/*`         | 文件类型                 |
+| `maxSize`      | `number`                    | `5 * 1024 * 1024` | 文件大小限制             |
+| `forceMobile`  | `boolean`                   | `false`           | 桌面也使用移动端删除按钮 |
+
+```tsx
+import { ImageUpload } from "@buildingai/ui/components/ui/image-upload";
+
+<ImageUpload
+    value={form.cover}
+    size="xl"
+    onChange={(url, result) => {
+        setForm((prev) => ({ ...prev, cover: url ?? "" }));
+        console.log(result?.id);
+    }}
+    onUploadStart={() => setUploading(true)}
+    onUploadError={(error) => toast.error(error.message)}
+/>;
+```
+
+内部逻辑：
+
+- 系统未初始化时使用 `uploadInitFile`，无需登录态。
+- 系统初始化后使用 `useUpload`，最终走 `uploadFileAuto`。
+- 有图时桌面 hover 显示替换/删除；移动端显示右上角删除按钮。
+
+### Upload
+
+位置：`packages/@buildingai/web/ui/src/components/upload.tsx`
+
+导入：
+
+```tsx
+import {
+    Upload,
+    UploadDropzone,
+    UploadFileList,
+    UploadRoot,
+    UploadTrigger,
+    useUpload,
+} from "@buildingai/ui/components/upload";
+```
+
+核心类型：
+
+```ts
+type UploadStatus = "idle" | "uploading" | "success" | "error";
+
+interface UploadFile {
+    id: string;
+    file: File;
+    status: UploadStatus;
+    progress: number;
+    result?: UploadFileResult;
+    error?: string;
+}
+```
+
+预设 UI：
+
+```tsx
+<Upload
+    multiple
+    maxFiles={5}
+    maxSize={20 * 1024 * 1024}
+    accept=".pdf,.docx,.txt"
+    params={{ description: "知识库文档", extensionId }}
+    onUploadStart={(files) => console.log(files.length)}
+    onUploadProgress={(file) => console.log(file.progress)}
+    onUploadSuccess={(file, result) => console.log(file.file.name, result.url)}
+    onUploadError={(file, error) => toast.error(`${file.file.name}: ${error.message}`)}
+    onUploadComplete={(files) => console.log(files)}
+/>
+```
+
+组合式 UI：
+
+```tsx
+<UploadRoot multiple accept="image/*" maxFiles={3}>
+    <UploadTrigger>选择图片</UploadTrigger>
+    <UploadDropzone
+        className="rounded-md border border-dashed p-8"
+        activeClassName="border-primary bg-primary/5"
+    >
+        {({ isDragOver, isUploading }) =>
+            isUploading ? "上传中..." : isDragOver ? "松开上传" : "拖拽文件到这里"
+        }
+    </UploadDropzone>
+    <UploadFileList className="space-y-2" />
+</UploadRoot>
+```
+
+只复用逻辑：
+
+```tsx
+const { files, upload, isUploading, removeFile, clearFiles, getRootProps, getInputProps } =
+    useUpload({
+        multiple: true,
+        onUploadComplete: (items) => console.log(items),
+    });
+
+return (
+    <div {...getRootProps()}>
+        <input {...getInputProps()} />
+        {files.map((file) => (
+            <button key={file.id} onClick={() => removeFile(file.id)}>
+                {file.file.name}
+            </button>
+        ))}
+    </div>
+);
+```
+
+### 上传服务
+
+位置：
+
+- `packages/@buildingai/web/services/src/shared/upload.ts`
+- `packages/@buildingai/web/services/src/shared/upload-oss.ts`
+
+导入：
+
+```ts
+import {
+    invalidateStorageConfigCache,
+    uploadFile,
+    uploadFileAuto,
+    uploadFiles,
+    uploadFilesAuto,
+    uploadInitFile,
+} from "@buildingai/services/shared";
+```
+
+选择规则：
+
+| 函数                           | 场景                                         |
+| ------------------------------ | -------------------------------------------- |
+| `uploadFileAuto`               | 业务单文件上传，自动判断本地或 OSS，优先使用 |
+| `uploadFilesAuto`              | 业务多文件上传，自动判断本地或 OSS，优先使用 |
+| `uploadFile`                   | 强制走后端本地上传接口                       |
+| `uploadFiles`                  | 强制走后端本地多文件上传接口                 |
+| `uploadInitFile`               | 系统初始化阶段，无登录态上传                 |
+| `invalidateStorageConfigCache` | 修改存储配置后清空前端缓存                   |
+
+```ts
+const result = await uploadFileAuto(
+    file,
+    { description: "头像" },
+    {
+        onUploadProgress: (event) => {
+            const percent = event.total ? Math.round((event.loaded / event.total) * 100) : 0;
+            setProgress(percent);
+        },
+    },
+);
+```
+
+注意：
+
+- 页面层一般不直接调用上传服务，优先用 `ImageUpload`、`Upload`、`useUploadFile`。
+- 如果后台切换了存储类型，需要调用 `invalidateStorageConfigCache()`，否则前端可能继续使用旧的 active
+  storage 配置。
+
+## 列表与滚动
+
+### InfiniteScroll
+
+向下加载更多，适合卡片列表、表格外层列表。
+
+```tsx
+import { InfiniteScroll } from "@buildingai/ui/components/infinite-scroll";
+
+<InfiniteScroll
+    loading={query.isFetchingNextPage}
+    hasMore={hasNextPage}
+    threshold={120}
+    onLoadMore={() => fetchNextPage()}
+>
+    {items.map((item) => (
+        <Item key={item.id} item={item} />
+    ))}
+</InfiniteScroll>;
+```
+
+### InfiniteScrollTop
+
+向上加载历史，适合聊天消息。它会处理底部吸附和 prepend 后的滚动保持。
+
+```tsx
+import { InfiniteScrollTop } from "@buildingai/ui/components/infinite-scroll-top";
+
+<InfiniteScrollTop
+    hasMore={hasMoreMessages}
+    isLoadingMore={isLoadingMoreMessages}
+    onLoadMore={loadMoreMessages}
+    prependKey={oldestMessageId}
+    topThreshold={32}
+>
+    {messages.map((message) => (
+        <MessageItem key={message.id} message={message} />
+    ))}
+</InfiniteScrollTop>;
+```
+
+使用注意：
+
+- `prependKey` 传入最老消息 id 或列表长度，用于识别“前面插入了历史消息”。
+- 内容很少但仍希望撑满容器时用 `forceFullHeight`。
+- 不需要“回到底部”按钮时设置 `hideScrollToBottomButton`。
+
+## 富文本编辑器
+
+位置：`packages/@buildingai/web/ui/src/components/editor`
+
+导入：
+
+```tsx
+import {
+    Editor,
+    EditorContainer,
+    EditorKit,
+    markdownToValue,
+    Plate,
+    serializeEditorToMarkdown,
+    usePlateEditor,
+} from "@buildingai/ui/components/editor";
+```
+
+封装内容：
+
+- `EditorKit`：项目默认 Plate 插件组合。
+- `BaseEditorKit`：较基础的插件组合。
+- `markdownToValue`：Markdown 转编辑器 value。
+- `serializeEditorToMarkdown`：编辑器内容转 Markdown。
+- `EditorContainer`、`Editor`：项目统一编辑器 UI。
+- `EditorContentRenderer`：只读渲染内容。
+
+编辑示例：
+
+```tsx
+const editor = usePlateEditor({
+    plugins: EditorKit,
+    id: "article-content",
+    value: markdownToValue(initialMarkdown),
+});
+
+<Plate
+    editor={editor}
+    onValueChange={() => {
+        const markdown = serializeEditorToMarkdown(editor);
+        setContent(markdown);
+    }}
+>
+    <EditorContainer className="min-h-80 rounded-lg border">
+        <Editor variant="default" />
+    </EditorContainer>
+</Plate>;
+```
+
+使用注意：
+
+- 编辑器实例 `id` 要稳定，避免多个编辑器状态串扰。
+- 初始值建议用 `useMemo(() => markdownToValue(content), [contentId])`，不要每次输入都重新构造。
+- 表单提交时存 Markdown，详情页渲染时再转或用只读渲染器。
+
+## 鉴权与权限组件
+
+### AuthGuard
+
+导入：
+
+```tsx
+import AuthGuard from "@buildingai/ui/components/auth/auth-guard";
+```
+
+适用：路由层保护。未登录时跳转登录页；扩展路径会处理插件场景的重定向。
+
+```tsx
+{
+    element: <AuthGuard />,
+    children: [{ path: "/console", element: <ConsoleLayout /> }],
+}
+```
+
+### PermissionGuard
+
+导入：
+
+```tsx
+import { PermissionGuard } from "@buildingai/ui/components/auth/permission-guard";
+```
+
+关键 props：
+
+| prop           | 说明                                             |
+| -------------- | ------------------------------------------------ |
+| `permissions`  | 单个权限码或权限码数组                           |
+| `any`          | 为 true 时任意一个权限满足即可；默认需要全部满足 |
+| `blockOnly`    | 为 true 时不隐藏元素，只阻止交互并提示           |
+| `fallback`     | 无权限且非 `blockOnly` 时展示                    |
+| `toastMessage` | 阻止交互时的提示                                 |
+
+```tsx
+<PermissionGuard permissions="role:create">
+    <Button>创建角色</Button>
+</PermissionGuard>
+
+<PermissionGuard permissions={["role:update", "role:delete"]} any blockOnly>
+    <Button variant="destructive">批量操作</Button>
+</PermissionGuard>
+```
+
+### RootOnly
+
+```tsx
+import { RootOnly } from "@buildingai/ui/components/auth/root-only";
+
+<RootOnly fallback={null}>
+    <Button variant="destructive">系统维护</Button>
+</RootOnly>
+
+<RootOnly reverse>
+    <span>普通用户可见</span>
+</RootOnly>
+```
+
+## 主题、图标与展示工具
+
+### ThemeProvider 与 ThemeToggle
+
+```tsx
+import { ThemeProvider, useTheme } from "@buildingai/ui/components/theme-provider";
+import { ThemeToggle } from "@buildingai/ui/components/theme-toggle";
+
+<ThemeProvider
+    defaultTheme="system"
+    storageKey="buildingai-theme"
+    defaultThemeColor="indigo"
+    themeColorStorageKey="buildingai-theme-color"
+>
+    <App />
+</ThemeProvider>;
+```
+
+`useTheme()` 返回：
+
+- `theme` / `setTheme`
+- `themeColor` / `setThemeColor`
+
+### CopyButton
+
+```tsx
+import { CopyButton } from "@buildingai/ui/components/copy-button";
+
+<CopyButton
+    value={code}
+    timeout={1500}
+    onCopy={() => toast.success("已复制")}
+    onCopyError={(error) => toast.error(error.message)}
+/>;
+```
+
+### 文件、图标、动效
+
+| 组件             | 用法                           |
+| ---------------- | ------------------------------ |
+| `FileFormatIcon` | 根据 `format` 渲染文件类型图标 |
+| `LucideIcon`     | 用字符串图标名渲染 lucide 图标 |
+| `IconPicker`     | 图标选择器，内置搜索和虚拟滚动 |
+| `Loader`         | 品牌 loading                   |
+| `ReloadWindow`   | 点击刷新窗口                   |
+| `CountUp`        | 数字递增动画                   |
+| `SplitText`      | 文本拆分动画                   |
+
+```tsx
+<FileFormatIcon format="pdf" className="size-5" />
+<LucideIcon name="settings" className="size-4" />
+<IconPicker value={icon} onChange={setIcon} />
+```
+
+## AI 展示组件
+
+位置：`packages/@buildingai/web/ui/src/components/ai-elements`
+
+这组组件是 AI/Agent 场景的通用展示 primitives，不绑定主应用的会话接口。
+
+### 常用组件分组
+
+| 分组       | 组件                                                                                      | 场景                                 |
+| ---------- | ----------------------------------------------------------------------------------------- | ------------------------------------ |
+| 对话容器   | `Conversation`、`ConversationContent`、`ConversationScrollButton`、`ConversationDownload` | 聊天窗口、导出对话                   |
+| 消息       | `Message`、`MessageContent`、`MessageActions`                                             | 用户/助手消息布局                    |
+| 输入       | `PromptInput`、`PromptInputTextarea`、`PromptInputSubmit`、`PromptInputAttachments`       | AI prompt 输入框                     |
+| 附件       | `MessageAttachment`、`MessageAttachments`、`PromptInputAttachment`                        | 展示上传文件                         |
+| 推理       | `Reasoning`、`ReasoningTrigger`、`ReasoningContent`、`ChainOfThought`                     | 思考过程、推理折叠                   |
+| 工具调用   | `Tool`、`ToolHeader`、`ToolInput`、`ToolOutput`、`Confirmation`                           | 工具状态、入参、结果、审批           |
+| 代码/终端  | `CodeBlock`、`CodeBlockCopyButton`、`Terminal`、`TerminalCopyButton`                      | 代码高亮、命令输出                   |
+| 引用       | `InlineCitation`、`Sources`、`Source`                                                     | 知识库/网页引用                      |
+| Agent 过程 | `FileTree`、`Queue`、`Task`、`TestResults`、`StackTrace`                                  | 文件变更、任务队列、测试结果、错误栈 |
+| 媒体/预览  | `Image`、`AudioPlayer`、`WebPreview`、`JSXPreview`                                        | 图片、音频、网页/JSX 预览            |
+| 选择器     | `ModelSelector`、`VoiceSelector`、`MicSelector`                                           | 模型、声音、麦克风选择               |
+
+### 基础消息
+
+```tsx
+import { Message, MessageContent } from "@buildingai/ui/components/ai-elements/message";
+
+<Message from="assistant">
+    <MessageContent>你好，我可以帮你分析这个任务。</MessageContent>
+</Message>;
+```
+
+### 工具调用
+
+```tsx
+import {
+    Tool,
+    ToolContent,
+    ToolHeader,
+    ToolInput,
+    ToolOutput,
+} from "@buildingai/ui/components/ai-elements/tool";
+
+<Tool defaultOpen>
+    <ToolHeader type="tool-weather" state="output-available" toolName="weather" />
+    <ToolContent>
+        <ToolInput input={{ city: "Shanghai" }} />
+        <ToolOutput output={{ temperature: 22 }} />
+    </ToolContent>
+</Tool>;
+```
+
+### 代码块
+
+```tsx
+import {
+    CodeBlock,
+    CodeBlockActions,
+    CodeBlockCopyButton,
+    CodeBlockHeader,
+    CodeBlockTitle,
+} from "@buildingai/ui/components/ai-elements/code-block";
+
+<CodeBlock code={source} language="tsx" showLineNumbers>
+    <CodeBlockHeader>
+        <CodeBlockTitle>example.tsx</CodeBlockTitle>
+        <CodeBlockActions>
+            <CodeBlockCopyButton />
+        </CodeBlockActions>
+    </CodeBlockHeader>
+</CodeBlock>;
+```
+
+迁移原则：
+
+- 只是“展示一个 AI 产物”：放 `@buildingai/ui/components/ai-elements`。
+- 需要调用主应用聊天接口、历史消息接口、反馈接口：放
+  `packages/client/src/components/ask-assistant-ui`。
+
+## 主应用业务组件
+
+### ask-assistant-ui
+
+位置：`packages/client/src/components/ask-assistant-ui`
+
+这是主应用完整 AI 对话模块，包含：
+
+- 模型列表转换与选中模型。
+- MCP 服务选择。
+- 文件上传与文件类型限制。
+- 流式对话请求。
+- 历史消息分页和向上加载。
+- 消息分支、重新生成、编辑后继续对话。
+- 点赞点踩反馈。
+- 工具调用展示。
+
+入口：
+
+```tsx
+import { AssistantProvider, Chat, useAssistant } from "@/components/ask-assistant-ui";
+import type { AiProvider } from "@buildingai/services/web";
+```
+
+典型用法：
+
+```tsx
+function AssistantChat({ providers }: { providers: AiProvider[] }) {
+    const assistant = useAssistant({
+        providers,
+        enableThinking: true,
+        suggestions: [
+            { title: "帮我总结", prompt: "请总结当前内容" },
+            { title: "生成计划", prompt: "给我一个执行计划" },
+        ],
+    });
+
+    return (
+        <AssistantProvider {...assistant}>
+            <Chat title="AI 助手" />
+        </AssistantProvider>
+    );
+}
+```
+
+内部模块怎么改：
+
+| 需求                               | 修改位置                                                        |
+| ---------------------------------- | --------------------------------------------------------------- |
+| 调整输入框、建议词、语音输入       | `components/input/*`                                            |
+| 调整消息气泡、用量、分支、反馈     | `components/message/*`                                          |
+| 新增工具展示                       | `components/tools/*`                                            |
+| 修改发送参数、停止、重新生成、审批 | `hooks/use-chat-stream.ts`                                      |
+| 修改消息树、分支逻辑               | `libs/message-repository.ts`、`hooks/use-message-repository.ts` |
+| 修改历史消息分页                   | `hooks/use-messages-paging.ts`                                  |
+| 修改文件类型限制                   | `hooks/use-file-upload.ts`                                      |
+
+### settings-dialog
+
+位置：`packages/client/src/components/settings-dialog`
+
+导入：
+
+```tsx
+import { SettingsDialogProvider, useSettingsDialog } from "@/components/settings-dialog";
+```
+
+根部挂载：
+
+```tsx
+function Root() {
+    return <SettingsDialogProvider>{children}</SettingsDialogProvider>;
+}
+```
+
+业务打开：
+
+```tsx
+function ProfileButton() {
+    const settings = useSettingsDialog();
+    return <Button onClick={() => settings.open("profile")}>个人设置</Button>;
+}
+```
+
+已有页面：
+
+| page           | 内容      |
+| -------------- | --------- |
+| `profile`      | 个人资料  |
+| `general`      | 通用设置  |
+| `wallet`       | 钱包/算力 |
+| `redeemCDK`    | 兑换码    |
+| `tools`        | 工具设置  |
+| `subscribe`    | 订阅      |
+| `personalized` | 个性化    |
+| `about`        | 关于      |
+
+### tags
+
+位置：`packages/client/src/components/tags`
+
+导入：
+
+```tsx
+import { ManageTagsDialog, TagCreate, TagSelect } from "@/components/tags";
+```
+
+`TagSelect`：
+
+```tsx
+<TagSelect value={tagIds} onChange={setTagIds} type="app" tagsSource="console" showManage />
+```
+
+关键 props：
+
+| prop         | 说明                                               |
+| ------------ | -------------------------------------------------- |
+| `value`      | 已选标签 id 数组                                   |
+| `onChange`   | 更新已选标签                                       |
+| `type`       | 标签类型，如 app/dataset                           |
+| `tagsSource` | `console` 使用后台标签接口，`web` 使用前台标签接口 |
+| `showManage` | 是否显示管理入口                                   |
+
+### 其他主应用组件
+
+| 组件                 | 位置                                                      | 作用                  |
+| -------------------- | --------------------------------------------------------- | --------------------- |
+| `AgreementDialog`    | `packages/client/src/components/agreement-dialog.tsx`     | 服务协议/隐私协议弹窗 |
+| `AppLogo`            | `packages/client/src/components/app-logo.tsx`             | 根据站点配置渲染 Logo |
+| `ProviderAvatar`     | `packages/client/src/components/provider-avatar.tsx`      | AI provider 头像      |
+| `ProviderIcon`       | `packages/client/src/components/provider-icons.tsx`       | AI provider 图标      |
+| `RightFloatingPanel` | `packages/client/src/components/right-floating-panel.tsx` | 右侧浮动面板          |
+
+## 前端 hooks
+
+### useAlertDialog
+
+位置：`packages/@buildingai/web/ui/src/hooks/use-alert-dialog.tsx`
+
+根部挂载：
+
+```tsx
+import { AlertDialogProvider } from "@buildingai/ui/hooks/use-alert-dialog";
+
+<AlertDialogProvider>
+    <App />
+</AlertDialogProvider>;
+```
+
+业务使用：
+
+```tsx
+import { useAlertDialog } from "@buildingai/ui/hooks/use-alert-dialog";
+
+const { confirm } = useAlertDialog();
+
+async function handleDelete() {
+    await confirm({
+        title: "确认删除？",
+        description: "删除后不可恢复",
+        confirmText: "删除",
+        confirmVariant: "destructive",
+    });
+    await deleteMutation.mutateAsync(id);
+}
+```
+
+注意：取消时 `confirm()` 会 throw。可以不写 catch，让函数中断；需要静默时自行 `try/catch`。
+
+### usePagination
+
+```tsx
+import { usePagination } from "@buildingai/ui/hooks/use-pagination";
+
+const pagination = usePagination({
+    total: data?.total ?? 0,
+    pageSize,
+    page,
+    siblingCount: 1,
+    onPageChange: setPage,
+});
+
+return <pagination.PaginationComponent className="mt-4" />;
+```
+
+返回：
+
+- `currentPage`
+- `totalPages`
+- `hasPrevious`
+- `hasNext`
+- `goToPage`
+- `nextPage`
+- `previousPage`
+- `reset`
+- `PaginationComponent`
+
+### useUploadFile
+
+简单上传 hook：
+
+```tsx
+import { useUploadFile } from "@buildingai/ui/hooks/use-upload-file";
+
+const { uploadFile, isUploading, progress, uploadedFile } = useUploadFile({
+    onUploadComplete: (file) => console.log(file.url),
+});
+
+await uploadFile(file);
+```
+
+### 页面级 hooks
+
+位置：`packages/@buildingai/web/hooks/src`
+
+| hook                      | 说明                                       |
+| ------------------------- | ------------------------------------------ |
+| `useDocumentHead`         | 注册页面 head 配置                         |
+| `useHeadRenderer`         | 根部渲染 head 配置到 DOM                   |
+| `definePageMeta`          | 给页面模块定义标题、权限、隐藏等元信息     |
+| `parsePageModules`        | 从 Vite glob 页面模块中解析页面路径和 meta |
+| `useCopy`                 | 复制文本，内置 toast 与 fallback           |
+| `useRefreshUser`          | 刷新用户信息                               |
+| `useRefreshUserConfig`    | 刷新用户配置                               |
+| `useRefreshWebsiteConfig` | 刷新站点配置                               |
+| `useSettingsDialog`       | 设置弹窗命令式上下文                       |
+| `useInboxHeartbeat`       | 收件箱心跳刷新                             |
+
+```tsx
+import { useCopy, useDocumentHead } from "@buildingai/hooks";
+
+function Page() {
+    useDocumentHead({ title: "文章管理" });
+    const { copy, isCopying } = useCopy();
+
+    return (
+        <Button disabled={isCopying} onClick={() => copy("hello")}>
+            复制
+        </Button>
+    );
+}
+```
+
+## 请求层封装
+
+### HttpClient
+
+位置：`packages/@buildingai/web/http/src`
+
+导入：
+
+```ts
+import { createHttpClient, createStandardApiParser } from "@buildingai/http";
+```
+
+封装能力：
+
+- 拼接 `baseURL + pathPrefix + url`。
+- 每个请求自动加 `x-request-id`。
+- 支持 `query` 参数。
+- 支持 `silent` 跳过全局错误提示。
+- 支持 `get/post/put/patch/delete/download/upload`。
+- 统一把 Axios 错误、业务错误转换为 `HttpError`。
+- 401 触发 `onAuthError`。
+- 业务无权限码 `40203` 触发 `onAccessError`。
+
+```ts
+const http = createHttpClient({
+    baseURL: import.meta.env.VITE_PRODUCTION_APP_BASE_URL,
+    pathPrefix: "/api",
+    parseResponse: createStandardApiParser(),
+    hooks: {
+        getAccessToken: () => token,
+        onError: (error) => toast.error(error.message),
+    },
+});
+
+const detail = await http.get<UserInfo>("/user/info");
+const list = await http.get<PaginatedResponse<User>>("/user", {
+    query: { page: 1, pageSize: 15 },
+});
+```
+
+### 内置 client
+
+位置：`packages/@buildingai/web/services/src/base.ts`
+
+```ts
+import { apiHttpClient, consoleHttpClient, createPluginHttpClients } from "@buildingai/services";
+```
+
+| client                                 | 用途           | 前缀                                           |
+| -------------------------------------- | -------------- | ---------------------------------------------- |
+| `apiHttpClient`                        | 前台用户侧接口 | `VITE_APP_WEB_API_PREFIX`，默认 `/api`         |
+| `consoleHttpClient`                    | 后台控制台接口 | `VITE_APP_CONSOLE_API_PREFIX`，默认 `/console` |
+| `createPluginHttpClients(identifier?)` | 扩展内接口     | `/{identifier}/api`、`/{identifier}/console`   |
+
+扩展内推荐写一个 `services/base.ts`：
+
+```ts
+import { createPluginHttpClients } from "@buildingai/services";
+
+const { apiHttpClient, consoleHttpClient } = createPluginHttpClients();
+
+export { apiHttpClient, consoleHttpClient };
+```
+
+### API hooks 编写规范
+
+位置：
+
+- `packages/@buildingai/web/services/src/web`
+- `packages/@buildingai/web/services/src/console`
+- 扩展内 `src/web/services`
+
+约定：
+
+- 查询：`useXxxQuery`、`useXxxListQuery`、`useXxxInfiniteQuery`
+- 变更：`useCreateXxxMutation`、`useUpdateXxxMutation`、`useDeleteXxxMutation`
+- queryKey 使用数组，格式为 `[模块, 操作, 参数]`
+- 类型和 hook 放在同一模块里，方便业务导入
+- 分页返回统一用 `PaginatedResponse<T>`
+
+```ts
+import type {
+    MutationOptionsUtil,
+    PaginatedQueryOptionsUtil,
+    PaginatedResponse,
+    QueryOptionsUtil,
+} from "@buildingai/web-types";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
+import { consoleHttpClient } from "../base";
+
+export function useArticleListQuery(
+    params?: QueryArticleParams,
+    options?: PaginatedQueryOptionsUtil<Article>,
+) {
+    return useQuery({
+        queryKey: ["articles", "list", params],
+        queryFn: () => consoleHttpClient.get<PaginatedResponse<Article>>("/article", { params }),
+        ...options,
+    });
+}
+
+export function useCreateArticleMutation(
+    options?: MutationOptionsUtil<Partial<Article>, CreateArticleParams>,
+) {
+    return useMutation({
+        mutationFn: (data) => consoleHttpClient.post<Partial<Article>>("/article", data),
+        ...options,
+    });
+}
+```
+
+## 全局状态封装
+
+位置：`packages/@buildingai/web/stores/src`
+
+### createStore
+
+项目对 Zustand 做了统一创建封装，并接入持久化同步。
+
+```ts
+import { createStore } from "@buildingai/stores";
+
+export const useDemoStore = createStore(createDemoSlice, {
+    persist: {
+        name: "demo",
+        partialize: (state) => ({ demo: state.demo }),
+    },
+});
+```
+
+### 已有 store
+
+| store                | 作用                                                     |
+| -------------------- | -------------------------------------------------------- |
+| `useAuthStore`       | token、当前用户、登录状态、退出登录；同步扩展可读 cookie |
+| `useConfigStore`     | 站点配置、初始化状态                                     |
+| `useUserConfigStore` | 用户偏好配置，例如字号                                   |
+| `useAssistantStore`  | AI 助手 UI 状态，例如选中模型                            |
+
+```ts
+import { useAuthStore } from "@buildingai/stores";
+
+const token = useAuthStore((s) => s.auth.token);
+const userInfo = useAuthStore((s) => s.auth.userInfo);
+const logout = useAuthStore((s) => s.authActions.logout);
+```
+
+存储工具：
+
+```ts
+import { getLocalStorage, safeJsonParse, safeJsonStringify } from "@buildingai/stores";
+
+const storage = getLocalStorage();
+const cached = safeJsonParse<string[]>(storage.getItem("selected_ids")) ?? [];
+storage.setItem("selected_ids", safeJsonStringify(cached));
+```
+
+## 扩展前端封装
+
+### defineRouteOption
+
+位置：`packages/@buildingai/web/core/src/defineRouteOption.tsx`
+
+封装内容：
+
+- 统一扩展 basename。
+- 接入 `AuthGuard`。
+- 接入扩展控制台布局。
+- iframe 内 route 变化通过 `postMessage` 同步给父页面。
+- 404 时通知父页面。
+
+```tsx
+import { defineRouteOption } from "@buildingai/web-core";
+import packageJson from "./../../package.json";
+
+export const routeOption = defineRouteOption({
+    base: `extension/${packageJson.name}`,
+    identifier: packageJson.name,
+    routes: [{ index: true, element: <IndexPage /> }],
+    consoleMenus: [{ title: "文章管理", path: "/", icon: "file-text" }],
+    consoleRoutes: [{ index: true, element: <ArticleListPage /> }],
+});
+```
+
+### defineExtensionViteConfig
+
+位置：`packages/@buildingai/web/core/src/vite/defineExtensionViteConfig.ts`
+
+```ts
+import { defineExtensionViteConfig } from "@buildingai/web-core/vite/extension";
+import packageJson from "./package.json";
+
+export default defineExtensionViteConfig(packageJson, {
+    server: { port: 5174 },
+});
+```
+
+封装内容：
+
+- React 插件。
+- Tailwind Vite 插件。
+- React Compiler。
+- `base: /extension/{packageName}`。
+- `envDir: ./../../`。
+- 默认输出 `.output/public`。
+
+## 新增前端代码怎么选
+
+1. 通用 UI：放 `packages/@buildingai/web/ui/src/components`。
+2. shadcn/Radix 项目风格封装：放 `components/ui`。
+3. AI 展示 primitive：放 `components/ai-elements`。
+4. 依赖主应用业务接口或状态：放 `packages/client/src/components`。
+5. 业务接口 hooks：前台放 `services/src/web`，后台放 `services/src/console`。
+6. 扩展接口 hooks：放扩展自己的 `src/web/services`。
+7. 文件上传：优先用已有上传组件和 `uploadFileAuto`。
+8. 删除/危险操作：优先用 `useAlertDialog`。
+9. 分页列表：优先用 `PaginatedResponse<T>` 和 `usePagination`。

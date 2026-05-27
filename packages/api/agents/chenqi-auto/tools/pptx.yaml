@@ -1,0 +1,7 @@
+"tool_name: pptx\ntool_desc: Presentation creation, editing, and analysis. Use when\
+  \ working with presentations (.pptx files) for: (1) Creating new presentations,\
+  \ (2) Modifying or editing content, (3) Working with layouts, (4) Adding comments\
+  \ or speaker notes, or any other presentation tasks\ntool_type: internal\n\nparameters:\n\
+  \  type: object\n  properties:\n    query:\n      type: string\n      description:\
+  \ 查询内容\n  required:\n    - query\n\ncall_config:\n  api_path: \n  method: POST\n\
+  \  timeout: 30\n\nresponse_format:\n  type: text\n"

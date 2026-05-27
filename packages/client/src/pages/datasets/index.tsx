@@ -21,7 +21,6 @@ import { ScrollArea } from "@buildingai/ui/components/ui/scroll-area";
 import { cn } from "@buildingai/ui/lib/utils";
 import { ChevronLeft, ChevronRight, FileText, Loader2, Search, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { useDebounceValue } from "usehooks-ts";
 
 const PAGE_SIZE = 20;

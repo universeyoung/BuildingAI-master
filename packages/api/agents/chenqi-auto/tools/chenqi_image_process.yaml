@@ -1,0 +1,14 @@
+"tool_name: chenqi_image_process\ntool_desc: 辰启-自动图片处理 v0.2。从飞书「商品全生命周期」表 I_TODO 行抢占\
+  \ 1 个 record，按 type_id 路由到 5 个 profile（electronics_audio 完整 + default_universal\
+  \ 完整 + electronics_small / home_textile / fashion_apparel 占位骨架），用 attr_values 精确数据\
+  \ + LLM 提炼生动文案双源构建 8 张 Ozon 商品图的 prompt（俄文+主体保真锚定句+反幻觉禁令）。**v0.2 颜色保真**：reference_images\
+  \ 第一位放飞书「规格主图URL」作颜色锚点 + 多角度图组（总 ≤11 张），「规格-颜色」中文字段通过 COLOR_ZH2RU 查表转俄语（30+ 常见色含玫瑰金/香槟/沙漠金）灌入\
+  \ prompt，解决同 SPU 多 SKU 颜色漂移问题。调 image_edit 一次性出 8 张 3:4 (900×1200)，把 Accio CDN URL\
+  \ 直接写飞书「主图1直链~主图8直链」（text 字段），状态置 I_DONE → 触发 L_TODO。每次会话只跑 1 个 record（image_edit\
+  \ 8 次串行）。当用户说「执行辰启-图片处理」「跑下一个图片」「图片 I_TODO」「auto-image」时触发。前置：(1) chenqi-lark-setup\
+  \ ≥v3.3.0 已跑过且 base_info.json 存在；(2) chenqi-auto-collect ≥v0.3.x 已写入 ≥1 条 I_TODO\
+  \ 图片记录（含「规格主图URL」+「规格-颜色」+「采集多角度图组URL」≥3 张 URL）；(3) Accio image_edit 工具可用；(4) Python\
+  \ 3.10+；(5) lark-cli 当前账号绑定。\ntool_type: internal\n\nparameters:\n  type: object\n\
+  \  properties:\n    query:\n      type: string\n      description: 查询内容\n  required:\n\
+  \    - query\n\ncall_config:\n  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n\
+  \  type: text\n"

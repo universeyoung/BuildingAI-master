@@ -1,0 +1,14 @@
+"tool_name: chenqi_listing\ntool_desc: 辰启-自动上架 v0.1。从飞书「商品全生命周期」表 L_TODO 行抢占 1 个 record，\n\
+  按 10 步串行编排把商品推到 Ozon /v3/product/import：抢占 → 读 17 字段 →\n店铺池 pick → 8 张图 HEAD+尺寸校验\
+  \ → attrs_pull_full（type_id 信任翻译，按 type 拉真实\n47 个属性 dict 做 ID 强校验+缺项 diff）→ build_payload（CNY\
+  \ 跨境店、offer_id=C{record_id}\n幂等、4 个加分位 bullet 拆 4189-4192、Rich Content widget JSON、商品描述\
+  \ 4191）→\nsubmit_import（支持 --dry-run 双管齐下 cache+print）→ poll_import 10s/300s\n→\
+  \ verify_errors（imported=L_DONE，stocks/prices 同步失败仅 warning 不降级）→\nfinalize 写飞书\
+  \ L_DONE/L_FAILED + Ozon商品ID + 商品链接 + 失败流水。\n当用户说「执行辰启-自动上架」「跑下一个上架」「推 L_TODO」「auto-listing」时触发。\n\
+  前置：(1) chenqi-lark-setup ≥v3.3.0 base_info.json 存在；\n(2) 上游 chenqi-image-process\
+  \ I_DONE + chenqi-auto-translate T_DONE +\nchenqi-pricing P_DONE 三家齐写 L_TODO；\n\
+  (3) 「店铺账号池」表至少 1 条 enabled shop（含 client_id/api_key）；\n(4) Python 3.12+ + lark-cli\
+  \ 当前账号已绑定。\n\ntool_type: internal\n\nparameters:\n  type: object\n  properties:\n\
+  \    query:\n      type: string\n      description: 查询内容\n  required:\n    - query\n\
+  \ncall_config:\n  api_path: \n  method: POST\n  timeout: 30\n\nresponse_format:\n\
+  \  type: text\n"

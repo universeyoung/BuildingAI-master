@@ -51,6 +51,7 @@ import { RoleModule } from "./role/role.module";
 import { ScheduleModule } from "./schedule/schedule.module";
 import { SystemModule } from "./system/system.module";
 import { TagModule } from "./tag/tag.module";
+import { TeamModule } from "./ai/team/team.module";
 import { UploadModule } from "./upload/upload.module";
 import { UserModule } from "./user/user.module";
 @Module({})
@@ -61,7 +62,6 @@ export class AppModule {
 
         const extensionsList = await initExtensionCache(extensionsDir, enabledIdentifiers);
 
-        // Create database schemas for extensions before loading extension modules
         await this.createExtensionSchemas(extensionsList);
 
         const publicPath = join(__dirname, "..", "..", "..", "..", "public");
@@ -89,7 +89,7 @@ export class AppModule {
                     isGlobal: true,
                     envFilePath: `../../.env`,
                 }),
-                ConfigModule.forRoot(), //
+                ConfigModule.forRoot(),
                 FileUrlModule,
                 RedisModule,
                 CacheModule,
@@ -98,7 +98,7 @@ export class AppModule {
                 GuardsModule,
                 BillingModule,
                 AuthModule,
-                CDKModule, //
+                CDKModule,
                 ChannelModule,
                 AiModule,
                 AppConfigModule,
@@ -114,6 +114,7 @@ export class AppModule {
                 RoleModule,
                 SystemModule,
                 TagModule,
+                TeamModule,
                 CoreUploadModule,
                 UploadModule,
                 AnalyseModule,
@@ -160,11 +161,6 @@ export class AppModule {
         };
     }
 
-    /**
-     * Create database schemas for extensions
-     *
-     * @param extensionsList List of extensions
-     */
     private static async createExtensionSchemas(
         extensionsList: Array<{ identifier: string; name: string }>,
     ): Promise<void> {
@@ -179,7 +175,6 @@ export class AppModule {
         let dataSource: DataSource | null = null;
 
         try {
-            // Create a temporary database connection for schema creation
             const databaseOptions = createDataSourceConfig();
             dataSource = new DataSource({
                 ...databaseOptions,
@@ -205,19 +200,12 @@ export class AppModule {
             TerminalLogger.error("Extension Schema", `Failed to create schemas: ${errorMessage}`);
             throw error;
         } finally {
-            // Close the temporary connection
             if (dataSource?.isInitialized) {
                 await dataSource.destroy();
             }
         }
     }
 
-    /**
-     * Create database schema for a single extension
-     *
-     * @param dataSource Database connection
-     * @param extension Extension information
-     */
     private static async createSchemaForExtension(
         dataSource: DataSource,
         extension: { identifier: string; name: string },
@@ -225,7 +213,6 @@ export class AppModule {
         const schemaName = getExtensionSchemaName(extension.identifier);
 
         try {
-            // Check if schema already exists
             const result = await dataSource.query(
                 `SELECT schema_name FROM information_schema.schemata WHERE schema_name = $1`,
                 [schemaName],
@@ -239,7 +226,6 @@ export class AppModule {
                 return;
             }
 
-            // Create schema
             await dataSource.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
             TerminalLogger.success("Extension Schema", `Created schema: ${schemaName}`);
         } catch (error) {
