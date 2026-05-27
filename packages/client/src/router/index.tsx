@@ -26,6 +26,9 @@ import ChatPage from "../pages/chat";
 import { LoginPage } from "../pages/login";
 import { OAuthCallbackPage } from "../pages/login/oauth-callback";
 import AlipayReturnPage from "../pages/payment/alipay-return";
+import ScheduledTaskListPage from "@/pages/scheduled-task";
+import ScheduledTaskCreatePage from "@/pages/scheduled-task/create";
+import ScheduledTaskEditPage from "@/pages/scheduled-task/edit";
 
 export const router = createBrowserRouter([
   {
@@ -147,6 +150,18 @@ export const router = createBrowserRouter([
           {
             path: "/agents/workspace",
             element: <AgentsWorkspacePage />,
+          },
+          {
+            path: "/tasks",
+            element: <ScheduledTaskListPage />,
+          },
+          {
+            path: "/tasks/new",
+            element: <ScheduledTaskCreatePage />,
+          },
+          {
+            path: "/tasks/:id/edit",
+            element: <ScheduledTaskEditPage />,
           },
           {
             path: "*",

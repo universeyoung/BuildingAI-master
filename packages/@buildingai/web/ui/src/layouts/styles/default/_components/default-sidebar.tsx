@@ -12,8 +12,9 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@buildingai/ui/components/ui/sidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@buildingai/ui/components/ui/tabs";
 import { isEnabled } from "@buildingai/utils/is";
-import { ArrowUpRight, LayoutDashboard } from "lucide-react";
+import { ArrowUpRight, Clock, LayoutDashboard, MessageSquare } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -22,6 +23,7 @@ import { DefaultNavGroup } from "./default-group";
 import { DefaultLogo } from "./default-logo";
 import { DefaultNavMain, type NavItem } from "./default-nav-main";
 import { DefaultNavUser } from "./default-nav-user";
+import { TaskRecordsPanel } from "./task-records-panel";
 
 /**
  * Keyboard shortcut component that registers a global shortcut and displays the key hint
@@ -168,12 +170,37 @@ export function DefaultAppSidebar({ ...props }: React.ComponentProps<typeof Side
         <DefaultLogo />
       </SidebarHeader>
       <SidebarContent>
-        <DefaultNavMain items={navMain} isLoading={isMenuLoading} />
-        {(menuConfig?.groups ?? [])
-          .filter((group) => !group.isHidden)
-          .map((group) => (
-            <DefaultNavGroup key={group.id} group={group} />
-          ))}
+        <Tabs defaultValue="conversations" className="flex flex-1 flex-col">
+          <TabsList className="mx-2 mt-2 grid w-auto grid-cols-2">
+            <TabsTrigger value="conversations" className="text-xs">
+              <MessageSquare className="mr-1 size-3.5" />
+              对话记录
+            </TabsTrigger>
+            <TabsTrigger value="task-records" className="text-xs">
+              <Clock className="mr-1 size-3.5" />
+              定时任务
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="conversations"
+            forceMount
+            className="flex-1 flex-col data-[state=inactive]:hidden"
+          >
+            <DefaultNavMain items={navMain} isLoading={isMenuLoading} />
+            {(menuConfig?.groups ?? [])
+              .filter((group) => !group.isHidden)
+              .map((group) => (
+                <DefaultNavGroup key={group.id} group={group} />
+              ))}
+          </TabsContent>
+          <TabsContent
+            value="task-records"
+            forceMount
+            className="flex-1 flex-col data-[state=inactive]:hidden"
+          >
+            <TaskRecordsPanel />
+          </TabsContent>
+        </Tabs>
       </SidebarContent>
       <SidebarFooter className="in-data-[state=collapsed]:overflow-hidden">
         <SidebarMenu>

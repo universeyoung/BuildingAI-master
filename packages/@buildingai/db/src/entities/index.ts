@@ -61,3 +61,6 @@ export { User } from "./user.entity";
 export { UserDict } from "./user-dict.entity";
 export { UserSubscription } from "./user-subscription.entity";
 export { UserToken } from "./user-token.entity";
+export { ScheduledTask } from "./scheduled-task.entity";
+export type { ScheduledTaskAdvancedSettings } from "./scheduled-task.entity";
+export { ScheduledTaskRun } from "./scheduled-task-run.entity";

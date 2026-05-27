@@ -49,6 +49,7 @@ import { Pm2Module } from "./pm2/pm2.module";
 import { RechargeModule } from "./recharge/recharge.module";
 import { RoleModule } from "./role/role.module";
 import { ScheduleModule } from "./schedule/schedule.module";
+import { ScheduledTaskModule } from "./scheduled-task/scheduled-task.module";
 import { SystemModule } from "./system/system.module";
 import { TagModule } from "./tag/tag.module";
 import { UploadModule } from "./upload/upload.module";
@@ -121,6 +122,7 @@ export class AppModule {
                 UserModule,
                 CloudStorageModule,
                 ScheduleModule,
+                ScheduledTaskModule,
                 SmsModule,
                 NoticeModule,
                 NotificationModule,

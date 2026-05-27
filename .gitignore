@@ -42,7 +42,7 @@ build
 packages/**/dist
 /public/package.json
 /public/*
-!/public/web/
+/public/web/
 !/public/index.html
 *.tsbuildinfo
 _temp_get_languages.*
