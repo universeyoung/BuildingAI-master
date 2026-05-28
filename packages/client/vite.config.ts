@@ -61,6 +61,21 @@ export default defineConfig({
           if (id.includes("lucide-react")) {
             return "lucide";
           }
+          if (id.includes("@tanstack/react-query") || id.includes("@tanstack/query")) {
+            return "query";
+          }
+          if (id.includes("react-router") || id.includes("react-router-dom")) {
+            return "router";
+          }
+          if (id.includes("node_modules/.pnpm/react@") || id.includes("node_modules/react/")) {
+            return "react-vendor";
+          }
+          if (id.includes("node_modules/.pnpm/sonner") || id.includes("node_modules/sonner")) {
+            return "ui-vendor";
+          }
+          if (id.includes("node_modules")) {
+            return "vendor";
+          }
         },
       },
     },

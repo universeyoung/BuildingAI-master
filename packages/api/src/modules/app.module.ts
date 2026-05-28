@@ -34,7 +34,7 @@ import { DynamicModule, Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { existsSync } from "fs";
+import { existsSync, statSync } from "fs";
 import { join } from "path";
 
 import { AiModule } from "./ai/ai.module";
@@ -58,12 +58,16 @@ import { UserModule } from "./user/user.module";
 export class AppModule {
     static async register(): Promise<DynamicModule> {
         const extensionsDir = join(process.cwd(), "..", "..", "extensions");
-        const enabledIdentifiers = await getEnabledExtensionsFromConfig(extensionsDir);
 
-        const extensionsList = await initExtensionCache(extensionsDir, enabledIdentifiers);
-
-        // Create database schemas for extensions before loading extension modules
-        await this.createExtensionSchemas(extensionsList);
+        let extensionsList: Array<{ identifier: string; name: string }> = [];
+        const extDirExists = existsSync(extensionsDir) && statSync(extensionsDir).isDirectory();
+        if (extDirExists) {
+            const enabledIdentifiers = await getEnabledExtensionsFromConfig(extensionsDir);
+            extensionsList = await initExtensionCache(extensionsDir, enabledIdentifiers);
+            await this.createExtensionSchemas(extensionsList);
+        } else {
+            TerminalLogger.info("Extension Schema", "Extensions directory not found, skipping");
+        }
 
         const publicPath = join(__dirname, "..", "..", "..", "..", "public");
         const webPath = join(publicPath, "web");
@@ -85,6 +89,14 @@ export class AppModule {
                         process.env.VITE_APP_WEB_API_PREFIX,
                         process.env.VITE_APP_CONSOLE_API_PREFIX,
                     ],
+                    serveStaticOptions: {
+                        maxAge: 1000 * 60 * 60 * 24 * 365,
+                        setHeaders: (res, path) => {
+                            if (path.endsWith(".html")) {
+                                res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                            }
+                        },
+                    },
                 }),
                 ConfigModule.forRoot({
                     isGlobal: true,
