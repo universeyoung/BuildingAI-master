@@ -14,7 +14,7 @@ import { Switch } from "@buildingai/ui/components/ui/switch";
 import { useAlertDialog } from "@buildingai/ui/hooks/use-alert-dialog";
 import { cn } from "@buildingai/ui/lib/utils";
 import { Bot, ChevronLeft, ChevronRight, Clock, Loader2, Play, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -117,6 +117,12 @@ function formatFutureTime(dateStr: string | null): string {
 export default function ScheduledTaskListPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 10000);
+    return () => clearInterval(timer);
+  }, []);
   const { confirm } = useAlertDialog();
 
   useDocumentHead({ title: "定时任务" });
