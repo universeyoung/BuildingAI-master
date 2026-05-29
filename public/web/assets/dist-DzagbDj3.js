@@ -1,1 +1,0 @@
-import{s as e}from"./rolldown-runtime-C5c2KzVm.js";import{eF as t}from"./lucide-BmB70WhG.js";var n=e(t(),1);function r(e){let t=n.useRef({value:e,previous:e});return n.useMemo(()=>(t.current.value!==e&&(t.current.previous=t.current.value,t.current.value=e),t.current.previous),[e])}export{r as t};

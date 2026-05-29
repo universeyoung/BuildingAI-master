@@ -14,9 +14,10 @@ import { Switch } from "@buildingai/ui/components/ui/switch";
 import { useAlertDialog } from "@buildingai/ui/hooks/use-alert-dialog";
 import { cn } from "@buildingai/ui/lib/utils";
 import { Bot, ChevronLeft, ChevronRight, Clock, Loader2, Play, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const PAGE_SIZE = 20;
 
@@ -115,14 +116,9 @@ function formatFutureTime(dateStr: string | null): string {
 }
 
 export default function ScheduledTaskListPage() {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 10000);
-    return () => clearInterval(timer);
-  }, []);
   const { confirm } = useAlertDialog();
 
   useDocumentHead({ title: "定时任务" });
@@ -133,7 +129,7 @@ export default function ScheduledTaskListPage() {
     ...(statusFilter !== "all" ? { isEnabled: statusFilter === "enabled" } : {}),
   };
 
-  const { data, isLoading } = useScheduledTaskListQuery(queryParams);
+  const { data, isLoading } = useScheduledTaskListQuery(queryParams, { refetchInterval: 30000 });
   const deleteMutation = useDeleteScheduledTaskMutation();
   const toggleMutation = useToggleScheduledTaskMutation();
   const runMutation = useRunScheduledTaskMutation();
@@ -150,7 +146,10 @@ export default function ScheduledTaskListPage() {
         confirmVariant: "destructive",
       });
       deleteMutation.mutate(task.id, {
-        onSuccess: () => toast.success("删除成功"),
+        onSuccess: () => {
+          toast.success("删除成功");
+          queryClient.invalidateQueries({ queryKey: ["scheduled-tasks"] });
+        },
         onError: () => toast.error("删除失败"),
       });
     } catch {
@@ -160,7 +159,10 @@ export default function ScheduledTaskListPage() {
 
   const handleToggle = (task: ScheduledTask) => {
     toggleMutation.mutate(task.id, {
-      onSuccess: () => toast.success(task.isEnabled ? "已禁用" : "已启用"),
+      onSuccess: () => {
+        toast.success(task.isEnabled ? "已禁用" : "已启用");
+        queryClient.invalidateQueries({ queryKey: ["scheduled-tasks"] });
+      },
       onError: () => toast.error("操作失败"),
     });
   };
@@ -172,7 +174,10 @@ export default function ScheduledTaskListPage() {
         description: `确定要立即执行「${task.name}」吗？`,
       });
       runMutation.mutate(task.id, {
-        onSuccess: () => toast.success("任务已开始执行"),
+        onSuccess: () => {
+          toast.success("任务已开始执行");
+          queryClient.invalidateQueries({ queryKey: ["scheduled-tasks"] });
+        },
         onError: () => toast.error("执行失败"),
       });
     } catch {
